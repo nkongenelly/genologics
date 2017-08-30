@@ -299,7 +299,7 @@ class Entity:
     _URI: str | None = None
     _PREFIX: str | None = None
 
-    def __new__(cls, lims, uri=None, id=None, _create_new=False):
+    def __new__(cls, lims, uri=None, id=None, _create_new=False, extra=None):
         if not uri:
             if id:
                 uri = lims.get_uri(cls._URI, id)
@@ -313,7 +313,7 @@ class Entity:
         except KeyError:
             return object.__new__(cls)
 
-    def __init__(self, lims, uri=None, id=None, _create_new=False):
+    def __init__(self, lims, uri=None, id=None, _create_new=False, extra=None):
         assert uri or id or _create_new
         if not _create_new:
             if hasattr(self, "lims"):
@@ -325,6 +325,7 @@ class Entity:
         self.lims = lims
         self._uri = uri
         self.root = None
+        self.extra = extra
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.id})"
@@ -1240,27 +1241,9 @@ class ProtocolStep(Entity):
 class Protocol(Entity):
     """Protocol, holding ProtocolSteps and protocol-properties"""
 
-    _URI = "configuration/protocols"
-    _TAG = "protocol"
-
-    steps = NestedEntityListDescriptor("step", ProtocolStep, "steps")
-    properties = NestedAttributeListDescriptor(
-        "protocol-property", "protocol-properties"
-    )
-
-
-class Automation(Entity):
-    """Automation, holding Automation configurations"""
-
-    _URI = "configuration/automations"
-    _TAG = "automation"
-
-    process_types = NestedEntityListDescriptor(
-        "process-type", Processtype, "process-types"
-    )
-    string = NestedStringDescriptor("string")
-    name = StringAttributeDescriptor("name")
-    context = NestedStringDescriptor("context")
+    name       = StringAttributeDescriptor('name')
+    steps      = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
+    properties = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
 
 
 class Stage(Entity):
@@ -1278,10 +1261,10 @@ class Workflow(Entity):
     _URI = "configuration/workflows"
     _TAG = "workflow"
 
-    name = StringAttributeDescriptor("name")
-    status = StringAttributeDescriptor("status")
-    protocols = NestedEntityListDescriptor("protocol", Protocol, "protocols")
-    stages = NestedEntityListDescriptor("stage", Stage, "stages")
+    name      = StringAttributeDescriptor("name")
+    status    = StringAttributeDescriptor("status")
+    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols', extra=["name"])
+    stages    = NestedEntityListDescriptor('stage', Stage, 'stages', extra=["name"])
 
 
 class ReagentType(Entity):
