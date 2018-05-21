@@ -236,7 +236,7 @@ class UdfDictionary(object):
             vtype = node.attrib['type'].lower()
 
             if value is None:
-                pass
+                value=''
             elif vtype == 'string':
                 if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
@@ -247,9 +247,10 @@ class UdfDictionary(object):
                 if not self._is_string(value):
                     raise TypeError('Text UDF requires str or unicode value')
             elif vtype == 'numeric':
-                if not isinstance(value, (int, float, Decimal)):
+                if not isinstance(value, (int, float, Decimal)) and value != '':
                     raise TypeError('Numeric UDF requires int or float value')
-                value = str(value)
+                else:
+                    value = str(value)
             elif vtype == 'boolean':
                 if not isinstance(value, bool):
                     raise TypeError('Boolean UDF requires bool value')
