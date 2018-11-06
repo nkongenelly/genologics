@@ -663,6 +663,9 @@ class ProcessTypeParametersDescriptor(object):
         for node in pt_instance.root.findall(self.tag):
             self.params.append(ProcessTypeParameter(pt_instance, node))
 
+    def __repr__(self):
+        return str(self._params)
+
 
 class ProcessTypeProcessInputDescriptor(TagDescriptor):
 
@@ -686,6 +689,9 @@ class ProcessTypeProcessInputDescriptor(TagDescriptor):
             self._inputs.append(ProcessTypeProcessInput(instance, node))
         return self
 
+    def __repr__(self):
+        return str(self._inputs)
+
 
 class ProcessTypeProcessOutputDescriptor(TagDescriptor):
 
@@ -705,9 +711,12 @@ class ProcessTypeProcessOutputDescriptor(TagDescriptor):
 
     def __get__(self, instance, owner):
         from genologics.internal_classes import ProcessTypeProcessOutput
-        for node in  instance.root.findall(self.tag):
+        for node in instance.root.findall(self.tag):
             self._inputs.append(ProcessTypeProcessOutput(instance, node))
         return self
+
+    def __repr__(self):
+        return str(self._inputs)
 
 
 class NamedStringDescriptor(TagDescriptor):
