@@ -1,5 +1,5 @@
 from genologics.descriptors import StringDescriptor, EntityListDescriptor, BooleanDescriptor, IntegerDescriptor
-from genologics.entities import File
+from genologics.entities import File, Udfconfig
 from genologics.constants import nsmap
 
 
@@ -21,6 +21,9 @@ class ProcessTypeParameter(object):
         self.root = node
         self.name = self.root.attrib['name']
 
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.name)
+
     def get(self):
         pass
 
@@ -38,9 +41,14 @@ class ProcessTypeProcessInput(object):
     def __init__(self, pt_instance, node):
         self.instance = pt_instance
         self.root = node
+        self.lims = pt_instance.lims
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.display_name)
 
     def get(self):
         pass
+
 
 class ProcessTypeProcessOutput(object):
 
@@ -55,10 +63,15 @@ class ProcessTypeProcessOutput(object):
     variability_type = StringDescriptor('variability-type')
     number_of_outputs = IntegerDescriptor('number-of-outputs')
     output_name = StringDescriptor('output-name')
+    field_definitions = EntityListDescriptor('field-definition', Udfconfig)
 
     def __init__(self, pt_instance, node):
         self.instance = pt_instance
         self.root = node
+        self.lims = pt_instance.lims
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.output_name)
 
     def get(self):
         pass
