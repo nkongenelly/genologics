@@ -558,6 +558,17 @@ class Processtype(Entity):
     def process_input(self):
         return self.process_inputs[0]
 
+class ControlType(Entity):
+    _URI = "controltypes"
+    _TAG = "control-type"
+    _PREFIX = 'ctrltp'
+
+    name = StringAttributeDescriptor('name')
+    supplier = StringDescriptor('supplier')
+    archived = BooleanDescriptor('archived')
+    single_step = BooleanDescriptor('single_step')
+
+
 class Process(Entity):
     "Process (instance of Processtype) executed producing ouputs from inputs."
 
@@ -1037,14 +1048,16 @@ class ProtocolStep(Entity):
 
     _TAG = 'step'
 
-    name                = StringAttributeDescriptor("name")
-    type                = EntityDescriptor('process-type', Processtype)
-    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
-    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
-    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
-    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
-    step_properties     = NestedAttributeListDescriptor('step-property', 'step-properties')
-    epp_triggers        = NestedAttributeListDescriptor('epp-trigger', 'epp-triggers')
+    name                    = StringAttributeDescriptor("name")
+    type                    = EntityDescriptor('process-type', Processtype)
+    permittedcontainers     = NestedStringListDescriptor('container-type', 'permitted-containers')
+    permitted_control_types = NestedEntityListDescriptor('control-type', ControlType, 'permitted-control-types')
+    required_reagent_kits   = NestedEntityListDescriptor('reagent-kit', ReagentKit, 'required-reagent-kits')
+    queue_fields            = NestedAttributeListDescriptor('queue-field', 'queue-fields')
+    step_fields             = NestedAttributeListDescriptor('step-field', 'step-fields')
+    sample_fields           = NestedAttributeListDescriptor('sample-field', 'sample-fields')
+    step_properties         = NestedAttributeListDescriptor('step-property', 'step-properties')
+    epp_triggers            = NestedAttributeListDescriptor('epp-trigger', 'epp-triggers')
 
 
 class Protocol(Entity):
@@ -1093,7 +1106,6 @@ class ReagentType(Entity):
                 for child in t.findall("attribute"):
                     if child.attrib.get("name") == "Sequence":
                         self.sequence = child.attrib.get("value")
-
 
 class Queue(Entity):
     """Queue of a given step. Will recursively get all the pages of artifacts, and therefore, can be quite slow to load"""
