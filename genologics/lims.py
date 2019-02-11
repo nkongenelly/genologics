@@ -609,3 +609,19 @@ class Lims(object):
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
         etree.write(outfile, encoding='utf-8', xml_declaration=True)
+
+    def create_container(self, container_type, name=None):
+        """Create a new container of type container_type and returns it
+        Akin to Container.create(lims type=container_type, name=name)"""
+        el = ElementTree.Element(nsmap('con:container'))
+        if name is not None:
+            nm = ElementTree.SubElement(el, 'name')
+            nm.text = name
+
+        ty = ElementTree.SubElement(el, 'type', attrib={'uri':container_type.uri, 'name':container_type.name})
+        ret_el = self.post(uri=self.get_uri('containers'), data=ElementTree.tostring(el))
+        ret_con = Container(self, uri=ret_el.attrib['uri'])
+        ret_con.root = ret_el
+
+        return ret_con
+
