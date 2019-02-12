@@ -13,7 +13,7 @@ from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor,
     PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, ReagentLabelList, NestedEntityListDescriptor, \
     NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor, NestedStringDescriptor, \
     NestedBooleanDescriptor, MultiPageNestedEntityListDescriptor, ProcessTypeParametersDescriptor, \
-    ProcessTypeProcessInputDescriptor, ProcessTypeProcessOutputDescriptor, NamedStringDescriptor
+    ProcessTypeProcessInputDescriptor, ProcessTypeProcessOutputDescriptor, NamedStringDescriptor, OutputReagentList
 
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
@@ -1016,6 +1016,13 @@ class StepDetails(Entity):
     udf = UdfDictionaryDescriptor('fields')
     udt = UdtDictionaryDescriptor('fields')
 
+class StepReagents(Entity):
+
+    reagent_category = StringDescriptor('reagent-category')
+    output_reagents = OutputReagentList(Artifact)
+
+
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -1030,6 +1037,7 @@ class Step(Entity):
     details       = EntityDescriptor('details', StepDetails)
     step_pools         = EntityDescriptor('pools', StepPools)
     program_status     = EntityDescriptor('program-status', StepProgramStatus)
+    reagents     = EntityDescriptor('reagents', StepReagents)
 
     def advance(self):
         self.get()
