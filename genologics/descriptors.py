@@ -603,6 +603,39 @@ class ReagentLabelList(BaseDescriptor):
         return self.value
 
 
+class OutputReagentList(BaseDescriptor):
+    """
+    Instance attribute depicting output reagents as :
+
+    {
+      output_artifact_1:[reagent_label_name_1, reagent_label_name_2,...]
+      output_artifact_2:[reagent_label_name_3, reagent_label_name_4,...]
+    }
+    """
+    def __init__(self, artifact_class):
+        self.klass = artifact_class
+
+    def __get__(self, instance, cls):
+        instance.get()
+        self.value = {}
+        for node in instance.root.iter('output'):
+            self.value[self.klass(instance.lims, uri=node.attrib['uri'])] = [subnode.attrib['name'] for subnode in node.findall('reagent-label')]
+
+        return self.value
+
+    def __set__(self, instance, value):
+        out_r = ElementTree.Element('output-reagents')
+        for artifact in value:
+            out_a = ElementTree.SubElement(out_r, 'output', attrib={'uri':artifact.uri})
+            for reagent_label_name in value[artifact]:
+                rea_l = ElementTree.SubElement(out_a, 'reagent-label', attrib={'name':reagent_label_name})
+
+        instance.root.remove(instance.root.find('output-reagents'))
+        instance.root.append(out_r)
+
+
+
+
 class InputOutputMapList(BaseDescriptor):
     """An instance attribute yielding a list of tuples (input, output)
     where each item is a dictionary, representing the input/output
