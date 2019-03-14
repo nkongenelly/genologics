@@ -864,27 +864,25 @@ class StepPlacements(Entity):
     def set_placement_list(self, value):
         containers = set()
         self.get_placement_list()
+        placement_dict = {x[0].stateless.uri:x for x in value }
         for node in self.root.find('output-placements').findall('output-placement'):
-            for pair in value:
-                art = pair[0]
-                if art.uri == node.attrib['uri']:
-                    location = pair[1]
-                    workset = location[0]
-                    well = location[1]
-                    if workset and location:
-                        containers.add(workset)
-                        if node.find('location') is not None:
-                            cont_el = node.find('location').find('container')
-                            cont_el.attrib['uri'] = workset.uri
-                            cont_el.attrib['limsid'] = workset.id
-                            value_el = node.find('location').find('value')
-                            value_el.text = well
-                        else:
-                            loc_el = ElementTree.SubElement(node, 'location')
-                            cont_el = ElementTree.SubElement(loc_el, 'container',
-                                                             {'uri': workset.uri, 'limsid': workset.id})
-                            well_el = ElementTree.SubElement(loc_el, 'value')
-                            well_el.text = well  # not supported in the constructor
+            location = placement_dict[node.attrib['uri']][1]
+            container = location[0]
+            well = location[1]
+            if container and location:
+                containers.add(container)
+                if node.find('location') is not None:
+                    cont_el = node.find('location').find('container')
+                    cont_el.attrib['uri'] = container.uri
+                    cont_el.attrib['limsid'] = container.id
+                    value_el = node.find('location').find('value')
+                    value_el.text = well
+                else:
+                    loc_el = ElementTree.SubElement(node, 'location')
+                    cont_el = ElementTree.SubElement(loc_el, 'container',
+                                                     {'uri': container.uri, 'limsid': container.id})
+                    well_el = ElementTree.SubElement(loc_el, 'value')
+                    well_el.text = well  # not supported in the constructor
         # Handle selected containers
         sc = self.root.find("selected-containers")
         sc.clear()
