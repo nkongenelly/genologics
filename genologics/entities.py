@@ -958,10 +958,16 @@ class StepActions(Entity):
         return actions
 
     def set_next_actions(self, actions):
+        action_dict = {a['artifact'].uri:a for a in actions}
         for node in self.root.find('next-actions').findall('next-action'):
             art_uri = node.attrib.get('artifact-uri')
-            action = [action for action in actions if action['artifact'].uri == art_uri][0]
-            if 'action' in action: node.attrib['action'] = action.get('action')
+            action = action_dict[art_uri]
+            if 'action' in action:
+                node.attrib['action'] = action.get('action')
+                if 'step-uri' in action:
+                    node.attrib['step-uri'] = action.get('step-uri')
+                if 'rework-step-uri' in action:
+                    node.attrib['rework-step-uri'] = action.get('rework-step-uri')
 
     next_actions = property(get_next_actions, set_next_actions)
 
