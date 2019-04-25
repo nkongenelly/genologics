@@ -1087,10 +1087,10 @@ class Automation(Entity):
     _URI = 'configuration/automations'
     _TAG = 'automation'
 
-    steps   = NestedEntityListDescriptor('process-type', Processtype, 'process-types')
-    bash    = NestedStringDescriptor('string')
-    name    = StringAttributeDescriptor('name')
-    context = NestedStringDescriptor('context')
+    process_types   = NestedEntityListDescriptor('process-type', Processtype, 'process-types')
+    string          = NestedStringDescriptor('string')
+    name            = StringAttributeDescriptor('name')
+    context         = NestedStringDescriptor('context')
 
 
 
