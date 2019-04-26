@@ -432,6 +432,11 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
+    def get_automations(self, name=None, add_info=False):
+        """Get the list of configured automations on the system """
+        params = self._get_params(name=name)
+        return self._get_instances(Automation, add_info=add_info, params=params)
+
     def get_workflows(self, name=None, add_info=False):
         """Get the list of existing workflows on the system """
         params = self._get_params(name=name)
