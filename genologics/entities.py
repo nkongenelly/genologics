@@ -1120,6 +1120,7 @@ class ReagentType(Entity):
     _PREFIX = 'rtp'
 
     category = StringDescriptor('reagent-category')
+    name      = StringAttributeDescriptor("name")
 
     def __init__(self, lims, uri=None, id=None):
         super(ReagentType, self).__init__(lims, uri, id)
