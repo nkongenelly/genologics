@@ -493,6 +493,16 @@ class File(Entity):
     is_published = BooleanDescriptor("is-published")
 
 
+class Instrument(Entity):
+    "Instrument"
+    _URI = 'instruments'
+    _PREFIX = 'inst'
+    name = StringDescriptor('name')
+    type = StringDescriptor('type')
+    serial_number = StringDescriptor('serial-number')
+    archived = BooleanDescriptor('archived')
+
+
 class Project(Entity):
     "Project concerning a number of samples; associated with a researcher."
 
@@ -500,15 +510,16 @@ class Project(Entity):
     _TAG = "project"
     _PREFIX = "prj"
 
-    name = StringDescriptor("name")
-    open_date = StringDescriptor("open-date")
-    close_date = StringDescriptor("close-date")
-    invoice_date = StringDescriptor("invoice-date")
-    researcher = EntityDescriptor("researcher", Researcher)
-    udf = UdfDictionaryDescriptor()
-    udt = UdtDictionaryDescriptor()
-    files = EntityListDescriptor(nsmap("file:file"), File)
-    externalids = ExternalidListDescriptor()
+    name         = StringDescriptor('name')
+    open_date    = StringDescriptor('open-date')
+    close_date   = StringDescriptor('close-date')
+    invoice_date = StringDescriptor('invoice-date')
+    researcher   = EntityDescriptor('researcher', Researcher)
+    udf          = UdfDictionaryDescriptor()
+    udt          = UdtDictionaryDescriptor()
+    files        = EntityListDescriptor(nsmap('file:file'), File)
+    externalids  = ExternalidListDescriptor()
+    instrument = EntityDescriptor('instrument', Instrument)
     # permissions XXX
 
 
@@ -665,11 +676,11 @@ class Process(Entity):
     technician = EntityDescriptor("technician", Researcher)
     protocol_name = StringDescriptor("protocol-name")
     input_output_maps = InputOutputMapList()
-    udf = UdfDictionaryDescriptor()
-    udt = UdtDictionaryDescriptor()
-    files = EntityListDescriptor(nsmap("file:file"), File)
-    process_parameter = StringDescriptor("process-parameter")
-    instrument = EntityDescriptor("instrument", Instrument)
+    udf               = UdfDictionaryDescriptor()
+    udt               = UdtDictionaryDescriptor()
+    files             = EntityListDescriptor(nsmap('file:file'), File)
+    process_parameter = StringDescriptor('process-parameter')
+    intrument = StringDescriptor('instrument')
 
     # process_parameters XXX
 
