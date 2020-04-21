@@ -409,7 +409,6 @@ class Project(Entity):
     udt          = UdtDictionaryDescriptor()
     files        = EntityListDescriptor(nsmap('file:file'), File)
     externalids  = ExternalidListDescriptor()
-    instrument = EntityDescriptor('instrument', Instrument)
     # permissions XXX
 
 
@@ -543,7 +542,7 @@ class Process(Entity):
     udt               = UdtDictionaryDescriptor()
     files             = EntityListDescriptor(nsmap('file:file'), File)
     process_parameter = StringDescriptor('process-parameter')
-    intrument = StringDescriptor('instrument')
+    instrument = EntityDescriptor('instrument', Instrument)
 
     # instrument XXX
     # process_parameters XXX
