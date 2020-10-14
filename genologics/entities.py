@@ -10,37 +10,8 @@ import logging
 from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
 from xml.etree import ElementTree
 
-from genologics.constants import nsmap
-from genologics.descriptors import (
-    BooleanDescriptor,
-    DimensionDescriptor,
-    EntityDescriptor,
-    EntityListDescriptor,
-    ExternalidListDescriptor,
-    InputOutputMapList,
-    IntegerAttributeDescriptor,
-    IntegerDescriptor,
-    LocationDescriptor,
-    MultiPageNestedEntityListDescriptor,
-    NamedStringDescriptor,
-    NestedAttributeListDescriptor,
-    NestedBooleanDescriptor,
-    NestedEntityListDescriptor,
-    NestedStringDescriptor,
-    NestedStringListDescriptor,
-    OutputReagentList,
-    PlacementDictionaryDescriptor,
-    ProcessTypeParametersDescriptor,
-    ProcessTypeProcessInputDescriptor,
-    ProcessTypeProcessOutputDescriptor,
-    ReagentLabelList,
-    StringAttributeDescriptor,
-    StringDescriptor,
-    StringDictionaryDescriptor,
-    StringListDescriptor,
-    UdfDictionaryDescriptor,
-    UdtDictionaryDescriptor,
-)
+import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -548,14 +519,46 @@ class Sample(Entity):
 
         Udfs can be sent in with the kwarg `udfs`. It should be a dictionary-like.
         """
-        if not isinstance(container, Container):
-            raise TypeError('%s is not of type Container'%container)
-        udfs = kwargs.pop("udfs", None)
-        instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
+        instance = cls.create_in_memory_instance(lims, container, position, **kwargs)
+        data = lims.tostring(ElementTree.ElementTree(instance.root))
+        instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
+        instance._uri = instance.root.attrib['uri']
+        return instance
 
-        location = ElementTree.SubElement(instance.root, "location")
-        ElementTree.SubElement(location, "container", dict(uri=container.uri))
-        position_element = ElementTree.SubElement(location, "value")
+    @classmethod
+    def batch_create(cls, lims, in_memory_instances):
+        """
+        Batch creates the samples. The list in_memory_instances is created by calls to
+        `Sample.create_in_memory_instance`
+        """
+        # Create a batch request from all in_memory_instances:
+        batch = ElementTree.Element(nsmap(cls._PREFIX + ':details'))
+
+        for instance in in_memory_instances:
+            element = copy.deepcopy(instance.root)
+            batch.append(element)
+
+        data = lims.tostring(ElementTree.ElementTree(batch))
+        response = lims.post(uri=lims.get_uri('samples/batch/create'), data=data)
+
+        ret = list()
+        for entry in response:
+            uri = entry.attrib['uri']
+            ret.append(Sample(lims=lims, uri=uri))
+        return ret
+
+    @classmethod
+    def create_in_memory_instance(cls, lims, container, position, **kwargs):
+        """
+        Creates a request for creating a single sample object
+        """
+        udfs = kwargs.pop("udfs", list())
+        if not isinstance(container, Container):
+            raise TypeError('%s is not of type Container' % container)
+        instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
+        location = ElementTree.SubElement(instance.root, 'location')
+        ElementTree.SubElement(location, 'container', dict(uri=container.uri))
+        position_element = ElementTree.SubElement(location, 'value')
         position_element.text = position
 
         # NOTE: This is a quick fix. I assume that it must be possible to initialize samples
@@ -567,10 +570,6 @@ class Sample(Entity):
             }
             udf = ElementTree.SubElement(instance.root, 'udf:field', attrib=attrib)
             udf.text = value
-
-        data = lims.tostring(ElementTree.ElementTree(instance.root))
-        instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
-        instance._uri = instance.root.attrib["uri"]
         return instance
 
 
@@ -617,7 +616,17 @@ class Container(Entity):
 class Udfconfig(Entity):
     "Instance of field type (cnf namespace)."
 
-    _URI = "configuration/udfs"
+    name                          = StringDescriptor('name')
+    attach_to_name                = StringDescriptor('attach-to-name')
+    attach_to_category            = StringDescriptor('attach-to-category')
+    show_in_lablink               = BooleanDescriptor('show-in-lablink')
+    allow_non_preset_values       = BooleanDescriptor('allow-non-preset-values')
+    first_preset_is_default_value = BooleanDescriptor('first-preset-is-default-value')
+    show_in_tables                = BooleanDescriptor('show-in-tables')
+    is_editable                   = BooleanDescriptor('is-editable')
+    is_deviation                  = BooleanDescriptor('is-deviation')
+    is_controlled_vocabulary      = BooleanDescriptor('is-controlled-vocabulary')
+    presets                       = StringListDescriptor('preset')
 
     name = StringDescriptor("name")
     attach_to_name = StringDescriptor("attach-to-name")
