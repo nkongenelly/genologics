@@ -790,7 +790,8 @@ class Artifact(Entity):
             return None
 
     def get_stateless_clone(self):
-        # Called before get() makes possible to use batch get
+        # This call should be followed by a get() or batch_get() in order to fetch
+        # a etree according to the updated uri
         parsed = urlparse(self.uri)
         import copy
         artifact_copy = copy.deepcopy(self)
