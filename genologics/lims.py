@@ -22,6 +22,8 @@ __all__ = [
 import os
 import re
 from io import BytesIO
+import requests
+from xml_comparison import ComparableXml
 
 # python 2.7, 3+ compatibility
 from urllib.parse import urlencode, urljoin
@@ -754,6 +756,11 @@ class Lims:
         outfile = BytesIO()
         self.write(outfile, etree)
         return outfile.getvalue()
+
+    def is_equal(self, entity1, entity2, exclude_tag=None):
+        c1 = ComparableXml(ElementTree.tostring(entity1.root), exclude_tag=exclude_tag)
+        c2 = ComparableXml(ElementTree.tostring(entity2.root), exclude_tag=exclude_tag)
+        return c1.tostring() == c2.tostring()
 
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
