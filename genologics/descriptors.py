@@ -6,6 +6,14 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
 
+from genologics.constants import nsmap
+
+try:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+except ImportError:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+
+from decimal import Decimal
 import datetime
 import logging
 import time
@@ -152,7 +160,10 @@ class UdfDictionary:
     "Dictionary-like container of UDFs, optionally within a UDT."
 
     def _is_string(self, value):
-        return isinstance(value, six.string_types)
+        try:
+            return isinstance(value, str)
+        except:
+            return isinstance(value, str)
 
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
@@ -324,6 +335,9 @@ class UdfDictionary:
 
     def __iter__(self):
         return self
+
+    def __next__(self):
+        return self.__next__()
 
     def __next__(self):
         try:

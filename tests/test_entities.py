@@ -170,19 +170,19 @@ generic_sample_creation_xml = """
 
 def elements_equal(e1, e2):
     if e1.tag != e2.tag:
-        print(f"Tag: {e1.tag} != {e2.tag}")
+        print(('Tag: %s != %s' % (e1.tag, e2.tag)))
         return False
     if e1.text and e2.text and e1.text.strip() != e2.text.strip():
-        print(f"Text: {e1.text.strip()} != {e2.text.strip()}")
+        print(('Text: %s != %s' % (e1.text.strip(), e2.text.strip())))
         return False
     if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip():
-        print(f"Tail: {e1.tail.strip()} != {e2.tail.strip()}")
+        print(('Tail: %s != %s' % (e1.tail.strip(), e2.tail.strip())))
         return False
     if e1.attrib != e2.attrib:
-        print(f"Attrib: {e1.attrib} != {e2.attrib}")
+        print(('Attrib: %s != %s' % (e1.attrib, e2.attrib)))
         return False
     if len(e1) != len(e2):
-        print(f"length {e1.tag} ({len(e1)}) != length ({e2.tag}) ")
+        print(('length %s (%s) != length (%s) ' % (e1.tag, len(e1), e2.tag, len(e2))))
         return False
     return all(
         elements_equal(c1, c2)

@@ -27,7 +27,12 @@ from io import BytesIO
 from urllib.parse import urlencode, urljoin
 from xml.etree import ElementTree
 
-import requests
+if version_info[0] == 2:
+    from urllib.parse import urljoin
+    from urllib.parse import urlencode
+else:
+    from urllib.parse import urljoin
+    from urllib.parse import urlencode
 
 from genologics.constants import nsmap
 
@@ -605,21 +610,20 @@ class Lims:
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
-        for key, value in kwargs.items():
-            if value is None:
-                continue
-            result[key.replace("_", "-")] = value
+        for key, value in list(kwargs.items()):
+            if value is None: continue
+            result[key.replace('_', '-')] = value
         return result
 
     def _get_params_udf(self, udf=dict(), udtname=None, udt=dict()):
         "Convert UDF-ish arguments to a params dictionary."
         result = dict()
-        for key, value in udf.items():
-            result[f"udf.{key}"] = value
+        for key, value in list(udf.items()):
+            result["udf.%s" % key] = value
         if udtname is not None:
-            result["udt.name"] = udtname
-        for key, value in udt.items():
-            result[f"udt.{key}"] = value
+            result['udt.name'] = udtname
+        for key, value in list(udt.items()):
+            result["udt.%s" % key] = value
         return result
 
     def _get_instances(self, klass, add_info=None, params=dict()):

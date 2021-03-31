@@ -6,8 +6,20 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
 
-import logging
-from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
+from genologics.constants import nsmap
+from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor, UdfDictionaryDescriptor, \
+    UdtDictionaryDescriptor, ExternalidListDescriptor, EntityDescriptor, BooleanDescriptor, EntityListDescriptor, \
+    StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
+    PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, ReagentLabelList, NestedEntityListDescriptor, \
+    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor, NestedStringDescriptor, \
+    NestedBooleanDescriptor, MultiPageNestedEntityListDescriptor, ProcessTypeParametersDescriptor, \
+    ProcessTypeProcessInputDescriptor, ProcessTypeProcessOutputDescriptor, NamedStringDescriptor, OutputReagentList
+
+try:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+except ImportError:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+
 from xml.etree import ElementTree
 
 import logging
@@ -57,16 +69,12 @@ class SampleHistory:
         #    logger.info(value[1]+"->"+value[0].id+"->"+key)
         logger.info("\nHistory :\n\n")
         logger.info("Input\tProcess\tProcess info")
-        for key, dict in self.history.items():
+        for key, dict in list(self.history.items()):
             logger.info(key)
-            for key2, dict2 in dict.items():
-                logger.info(f"\t{key2}")
-                for key, value in dict2.items():
-                    logger.info(
-                        "\t\t{}->{}".format(
-                            key, (value if value is not None else "None")
-                        )
-                    )
+            for key2, dict2 in list(dict.items()):
+                logger.info("\t{}".format(key2))
+                for key, value in list(dict2.items()):
+                    logger.info("\t\t{0}->{1}".format(key, (value if value is not None else "None")))
         logger.info("\nHistory List")
         for art in self.history_list:
             logger.info(art)
@@ -563,7 +571,7 @@ class Sample(Entity):
 
         # NOTE: This is a quick fix. I assume that it must be possible to initialize samples
         # with UDFs
-        for key, value in udfs.items():
+        for key, value in list(udfs.items()):
             attrib = {
                 "name": key,
                 "xmlns:udf": "http://genologics.com/ri/userdefined",

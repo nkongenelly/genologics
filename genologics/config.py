@@ -1,7 +1,14 @@
 import os
 from configparser import ConfigParser
 
-"""
+try:
+    from configparser import SafeConfigParser
+except ImportError:
+    from configparser import SafeConfigParser
+
+
+
+'''
 Usage:
 from genologics.config import BASEURI, USERNAME, PASSWORD
 
