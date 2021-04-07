@@ -241,7 +241,7 @@ class TestUdfDictionary(TestCase):
 
         # FIXME: I'm not sure if this is the expected behaviour
         self.dict1.__setitem__('how much', None)
-        assert self._get_udf_value(self.dict1, 'how much') == b'None'
+        assert self._get_udf_value(self.dict1, 'how much') == ''
 
 
     def test___setitem__new(self):
