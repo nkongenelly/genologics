@@ -61,7 +61,7 @@ class SampleHistory:
         #    logger.info(value[1]+"->"+value[0].id+"->"+key)
         logger.info("\nHistory :\n\n")
         logger.info("Input\tProcess\tProcess info")
-        for key, dict in list(self.history.items()):
+        for key, dict in self.history.items():
             logger.info(key)
             for key2, dict2 in list(dict.items()):
                 logger.info("\t{}".format(key2))
