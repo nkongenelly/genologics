@@ -25,7 +25,7 @@ def patched_get(*args, **kwargs):
         uri = kwargs["uri"]
     else:
         for arg in args:
-            if isinstance(arg, str) or isinstance(arg, str):
+            if isinstance(arg, str):
                 uri = arg
     if "params" in kwargs:
         params = kwargs["params"]
