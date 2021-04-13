@@ -7,11 +7,8 @@ Copyright (C) 2012 Per Kraulis
 """
 
 from genologics.constants import nsmap
+from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
 
-try:
-    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
-except ImportError:
-    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
 
 from decimal import Decimal
 import datetime
@@ -157,7 +154,7 @@ class UdfDictionary(object):
 
     def _is_string(self, value):
         try:
-            return isinstance(value, basestring)
+            return isinstance(value, str)
         except:
             return isinstance(value, str)
 
@@ -238,8 +235,10 @@ class UdfDictionary(object):
 
     def __setitem__(self, key, value):
         self._lookup[key] = value
+        key_found_in_xml = False
         for node in self._elems:
             if node.attrib['name'] != key: continue
+            key_found_in_xml = True
             vtype = node.attrib['type'].lower()
 
             if value is None:
@@ -272,15 +271,14 @@ class UdfDictionary(object):
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
-	    if value is None:
-	        node.text = ''
-	    else:
-		if not isinstance(value, str):
-		    if not self._is_string(value):
-			value = str(value).encode('UTF-8')
-		node.text = value
+            if value is None:
+                value = ''
+            elif not isinstance(value, str):
+                value = str(value).encode('UTF-8')
+            node.text = value
             break
-        else:  # Create new entry; heuristics for type
+
+        if not key_found_in_xml: # Create new entry; heuristics for type
             if self._is_string(value):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
@@ -331,7 +329,7 @@ class UdfDictionary(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return self.__next__()
 
     def __next__(self):

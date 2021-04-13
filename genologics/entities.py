@@ -18,7 +18,7 @@ from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor,
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
 except ImportError:
-    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
 
 from xml.etree import ElementTree
 
@@ -63,9 +63,9 @@ class SampleHistory:
         logger.info("Input\tProcess\tProcess info")
         for key, dict in self.history.items():
             logger.info(key)
-            for key2, dict2 in dict.items():
+            for key2, dict2 in list(dict.items()):
                 logger.info("\t{}".format(key2))
-                for key, value in dict2.items():
+                for key, value in list(dict2.items()):
                     logger.info("\t\t{0}->{1}".format(key, (value if value is not None else "None")))
         logger.info("\nHistory List")
         for art in self.history_list:
@@ -510,7 +510,7 @@ class Sample(Entity):
         """
         Creates a request for creating a single sample object
         """
-        udfs = kwargs.pop("udfs", list())
+        udfs = kwargs.pop("udfs", dict())
         if not isinstance(container, Container):
             raise TypeError('%s is not of type Container' % container)
         instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
@@ -521,7 +521,7 @@ class Sample(Entity):
 
         # NOTE: This is a quick fix. I assume that it must be possible to initialize samples
         # with UDFs
-        for key, value in udfs.items():
+        for key, value in list(udfs.items()):
             attrib = {
                 "name": key,
                 "xmlns:udf": "http://genologics.com/ri/userdefined",
