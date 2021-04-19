@@ -12,7 +12,8 @@ from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor,
     StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
     PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, ReagentLabelList, NestedEntityListDescriptor, \
     NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor, NestedStringDescriptor, \
-    NestedBooleanDescriptor
+    NestedBooleanDescriptor, MultiPageNestedEntityListDescriptor, ProcessTypeParametersDescriptor, \
+    ProcessTypeProcessInputDescriptor, ProcessTypeProcessOutputDescriptor, NamedStringDescriptor, OutputReagentList
 
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
@@ -297,6 +298,9 @@ class Entity(object):
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.lims.post(self.uri, data)
 
+    def xml(self):
+        return self.lims.tostring(ElementTree.ElementTree(self.root))
+
     @classmethod
     def _create(cls, lims, creation_tag=None, udfs=None, **kwargs):
         """Create an instance from attributes and return it"""
@@ -514,13 +518,6 @@ class Container(Entity):
         self.lims.delete(self.uri)
 
 
-class Processtype(Entity):
-    _TAG = 'process-type'
-    _URI = 'processtypes'
-    _PREFIX = 'ptp'
-
-    name = StringAttributeDescriptor('name')
-    # XXX
 
 
 class Udfconfig(Entity):
@@ -538,8 +535,38 @@ class Udfconfig(Entity):
     is_required                   = BooleanDescriptor('is-required')
     is_deviation                  = BooleanDescriptor('is-deviation') 
     is_controlled_vocabulary      = BooleanDescriptor('is-controlled-vocabulary')
-    presets                       = StringListDescriptor('preset') 
+    presets                       = StringListDescriptor('preset')
 
+
+class Processtype(Entity):
+    _TAG = 'process-type'
+    _URI = 'processtypes'
+    _PREFIX = 'ptp'
+
+    def __init__(self, lims, uri=None, id=None, _create_new=False):
+        super(Processtype, self).__init__(lims, uri, id, _create_new)
+        self.parameters = ProcessTypeParametersDescriptor(self)
+
+    name = StringAttributeDescriptor('name')
+    field_definition = EntityListDescriptor('field-definition', Udfconfig)
+    process_inputs = ProcessTypeProcessInputDescriptor()
+    process_outputs = ProcessTypeProcessOutputDescriptor()
+    process_type_attribute = NamedStringDescriptor('process-type-attribute')
+
+
+    @property
+    def process_input(self):
+        return self.process_inputs[0]
+
+class ControlType(Entity):
+    _URI = "controltypes"
+    _TAG = "control-type"
+    _PREFIX = 'ctrltp'
+
+    name = StringAttributeDescriptor('name')
+    supplier = StringDescriptor('supplier')
+    archived = BooleanDescriptor('archived')
+    single_step = BooleanDescriptor('single_step')
 
 
 class Process(Entity):
@@ -837,27 +864,25 @@ class StepPlacements(Entity):
     def set_placement_list(self, value):
         containers = set()
         self.get_placement_list()
+        placement_dict = {x[0].stateless.uri:x for x in value }
         for node in self.root.find('output-placements').findall('output-placement'):
-            for pair in value:
-                art = pair[0]
-                if art.uri == node.attrib['uri']:
-                    location = pair[1]
-                    workset = location[0]
-                    well = location[1]
-                    if workset and location:
-                        containers.add(workset)
-                        if node.find('location') is not None:
-                            cont_el = node.find('location').find('container')
-                            cont_el.attrib['uri'] = workset.uri
-                            cont_el.attrib['limsid'] = workset.id
-                            value_el = node.find('location').find('value')
-                            value_el.text = well
-                        else:
-                            loc_el = ElementTree.SubElement(node, 'location')
-                            cont_el = ElementTree.SubElement(loc_el, 'container',
-                                                             {'uri': workset.uri, 'limsid': workset.id})
-                            well_el = ElementTree.SubElement(loc_el, 'value')
-                            well_el.text = well  # not supported in the constructor
+            location = placement_dict[node.attrib['uri']][1]
+            container = location[0]
+            well = location[1]
+            if container and location:
+                containers.add(container)
+                if node.find('location') is not None:
+                    cont_el = node.find('location').find('container')
+                    cont_el.attrib['uri'] = container.uri
+                    cont_el.attrib['limsid'] = container.id
+                    value_el = node.find('location').find('value')
+                    value_el.text = well
+                else:
+                    loc_el = ElementTree.SubElement(node, 'location')
+                    cont_el = ElementTree.SubElement(loc_el, 'container',
+                                                     {'uri': container.uri, 'limsid': container.id})
+                    well_el = ElementTree.SubElement(loc_el, 'value')
+                    well_el.text = well  # not supported in the constructor
         # Handle selected containers
         sc = self.root.find("selected-containers")
         sc.clear()
@@ -933,10 +958,16 @@ class StepActions(Entity):
         return actions
 
     def set_next_actions(self, actions):
+        action_dict = {a['artifact'].uri:a for a in actions}
         for node in self.root.find('next-actions').findall('next-action'):
             art_uri = node.attrib.get('artifact-uri')
-            action = [action for action in actions if action['artifact'].uri == art_uri][0]
-            if 'action' in action: node.attrib['action'] = action.get('action')
+            action = action_dict[art_uri]
+            if 'action' in action:
+                node.attrib['action'] = action.get('action')
+                if 'step-uri' in action:
+                    node.attrib['step-uri'] = action.get('step-uri')
+                if 'rework-step-uri' in action:
+                    node.attrib['rework-step-uri'] = action.get('rework-step-uri')
 
     next_actions = property(get_next_actions, set_next_actions)
 
@@ -989,6 +1020,13 @@ class StepDetails(Entity):
     udf = UdfDictionaryDescriptor('fields')
     udt = UdtDictionaryDescriptor('fields')
 
+class StepReagents(Entity):
+
+    reagent_category = StringDescriptor('reagent-category')
+    output_reagents = OutputReagentList(Artifact)
+
+
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -1003,11 +1041,12 @@ class Step(Entity):
     details       = EntityDescriptor('details', StepDetails)
     step_pools         = EntityDescriptor('pools', StepPools)
     program_status     = EntityDescriptor('program-status', StepProgramStatus)
+    reagents     = EntityDescriptor('reagents', StepReagents)
 
     def advance(self):
         self.get()
         self.root = self.lims.post(
-            uri="{}/advance".format(self.uri),
+            uri="{0}/advance".format(self.uri),
             data=self.lims.tostring(ElementTree.ElementTree(self.root))
         )
 
@@ -1021,14 +1060,16 @@ class ProtocolStep(Entity):
 
     _TAG = 'step'
 
-    name                = StringAttributeDescriptor("name")
-    type                = EntityDescriptor('process-type', Processtype)
-    permittedcontainers = NestedStringListDescriptor('container-type', 'container-types')
-    queue_fields        = NestedAttributeListDescriptor('queue-field', 'queue-fields')
-    step_fields         = NestedAttributeListDescriptor('step-field', 'step-fields')
-    sample_fields       = NestedAttributeListDescriptor('sample-field', 'sample-fields')
-    step_properties     = NestedAttributeListDescriptor('step_property', 'step_properties')
-    epp_triggers        = NestedAttributeListDescriptor('epp_trigger', 'epp_triggers')
+    name                    = StringAttributeDescriptor("name")
+    type                    = EntityDescriptor('process-type', Processtype)
+    permittedcontainers     = NestedStringListDescriptor('container-type', 'permitted-containers')
+    permitted_control_types = NestedEntityListDescriptor('control-type', ControlType, 'permitted-control-types')
+    required_reagent_kits   = NestedEntityListDescriptor('reagent-kit', ReagentKit, 'required-reagent-kits')
+    queue_fields            = NestedAttributeListDescriptor('queue-field', 'queue-fields')
+    step_fields             = NestedAttributeListDescriptor('step-field', 'step-fields')
+    sample_fields           = NestedAttributeListDescriptor('sample-field', 'sample-fields')
+    step_properties         = NestedAttributeListDescriptor('step-property', 'step-properties')
+    epp_triggers            = NestedAttributeListDescriptor('epp-trigger', 'epp-triggers')
 
 
 class Protocol(Entity):
@@ -1038,6 +1079,19 @@ class Protocol(Entity):
 
     steps      = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
     properties = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
+
+
+
+class Automation(Entity):
+    """Automation, holding Automation configurations"""
+    _URI = 'configuration/automations'
+    _TAG = 'automation'
+
+    process_types   = NestedEntityListDescriptor('process-type', Processtype, 'process-types')
+    string          = NestedStringDescriptor('string')
+    name            = StringAttributeDescriptor('name')
+    context         = NestedStringDescriptor('context')
+
 
 
 class Stage(Entity):
@@ -1066,6 +1120,7 @@ class ReagentType(Entity):
     _PREFIX = 'rtp'
 
     category = StringDescriptor('reagent-category')
+    name      = StringAttributeDescriptor("name")
 
     def __init__(self, lims, uri=None, id=None):
         super(ReagentType, self).__init__(lims, uri, id)
@@ -1078,14 +1133,14 @@ class ReagentType(Entity):
                     if child.attrib.get("name") == "Sequence":
                         self.sequence = child.attrib.get("value")
 
-
 class Queue(Entity):
-    """Queue of a given step"""
+    """Queue of a given step. Will recursively get all the pages of artifacts, and therefore, can be quite slow to load"""
     _URI = "queues"
     _TAG= "queue"
     _PREFIX = "que"
 
-    artifacts=NestedEntityListDescriptor("artifact", Artifact, "artifacts")
+
+    artifacts = MultiPageNestedEntityListDescriptor("artifact", Artifact, "artifacts")
 
 Sample.artifact          = EntityDescriptor('artifact', Artifact)
 StepActions.step         = EntityDescriptor('step', Step)
