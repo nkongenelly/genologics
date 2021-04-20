@@ -78,6 +78,12 @@ for your server, all these must be reviewed and modified.
 
 The EPPs in use at Scilifelab can be found in the subdirectory 'scripts' of the repository [scilifelab_epps](https://github.com/SciLifeLab/scilifelab_epps/).
 
+### Tests
+
+The [limsmock](https://github.com/Clinical-Genomics/limsmock) serves as a LIMS REST API mock for testing purposes. It can be used for building tests for the genologicas package or other packages querying the clarity lims rest api.
+
+Some examples of how it can be used can be fount in [tests directory](https://github.com/Clinical-Genomics/limsmock/tree/master/tests).
+
 ### Pull requests policy
 
 Pull requests are welcome, and will be tested internally before merging. Be aware that this process might take a fair amount of time. 
