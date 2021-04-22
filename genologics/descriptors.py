@@ -5,7 +5,7 @@ Entities and their descriptors for the LIMS interface.
 Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
-
+import six
 from genologics.constants import nsmap
 
 try:
@@ -149,10 +149,7 @@ class UdfDictionary(object):
     "Dictionary-like container of UDFs, optionally within a UDT."
 
     def _is_string(self, value):
-        try:
-            return isinstance(value, basestring)
-        except:
-            return isinstance(value, str)
+        return isinstance(value, six.string_types)
 
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
@@ -321,9 +318,6 @@ class UdfDictionary(object):
     def __iter__(self):
         return self
 
-    def next(self):
-        return self.__next__()
-
     def __next__(self):
         try:
             ret = list(self._lookup.keys())[self.location]
@@ -331,6 +325,8 @@ class UdfDictionary(object):
             raise StopIteration()
         self.location = self.location + 1
         return ret
+
+    next = __next__
 
     def get(self, key, default=None):
         return self._lookup.get(key, default)
