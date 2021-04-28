@@ -758,9 +758,6 @@ class Artifact(Entity):
     # artifact_flags XXX
     # artifact_groups XXX
 
-    def __deepcopy__(self, memodict={}):
-        return self
-
     def input_artifact_list(self):
         """Returns the input artifact ids of the parrent process."""
         input_artifact_list = []
@@ -788,15 +785,6 @@ class Artifact(Entity):
             return self.location[0]
         except:
             return None
-
-    def get_stateless_clone(self):
-        # This call should be followed by a get() or batch_get() in order to fetch
-        # a etree according to the updated uri
-        parsed = urlparse(self.uri)
-        import copy
-        artifact_copy = copy.deepcopy(self)
-        artifact_copy._uri = "{}://{}{}".format(parsed.scheme, parsed.netloc, parsed.path)
-        return artifact_copy
 
     def stateless(self):
         "returns the artefact independently of it's state"
