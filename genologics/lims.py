@@ -23,7 +23,6 @@ import os
 import re
 from io import BytesIO
 import requests
-from xml_comparison import ComparableXml
 
 # python 2.7, 3+ compatibility
 from urllib.parse import urlencode, urljoin
