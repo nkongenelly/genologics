@@ -32,7 +32,7 @@ def main(lims,pid,file):
     io = p.input_output_maps
 
     # Filter them so that only PerInput output artifacts remains
-    io_filtered = [x_y for x_y in io if x_y[1]['output-generation-type']=='PerInput']
+    io_filtered = [x for x in io if x[1]['output-generation-type']=='PerInput']
 
     # Fetch the first input-output artifact pair
     (input,output) = io_filtered[0]
