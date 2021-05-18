@@ -6,8 +6,7 @@ Usage example: Get labs and lab info.
 
 Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 """
-
-import codecs
+from __future__ import unicode_literals
 from genologics.lims import *
 
 # Login parameters for connecting to a LIMS instance.
@@ -19,21 +18,17 @@ lims.check_version()
 
 # Get the list of all projects.
 labs = lims.get_labs(name='SciLifeLab')
-print len(labs), 'labs in total'
+print(len(labs), 'labs in total')
 for lab in labs:
-    print lab, id(lab), lab.name, lab.uri, lab.id
-    print lab.shipping_address.items()
+    print(lab, id(lab), lab.name, lab.uri, lab.id)
+    print(list(lab.shipping_address.items()))
     for key, value in lab.udf.items():
-        if isinstance(value, unicode):
-            value = codecs.encode(value, 'UTF-8')
-        print ' ', key, '=', value
+        print(' ', key, '=', value)
     udt = lab.udt
     if udt:
-        print 'UDT:', udt.udt
+        print('UDT:', udt.udt)
         for key, value in udt.items():
-            if isinstance(value, unicode):
-                value = codecs.encode(value, 'UTF-8')
-            print ' ', key, '=', value
+            print(' ', key, '=', value)
 
 lab = Lab(lims, id='2')
-print lab, id(lab), lab.name, lab.uri, lab.id
+print(lab, id(lab), lab.name, lab.uri, lab.id)

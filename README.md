@@ -6,12 +6,11 @@ A basic module for interacting with the Illumina Basespace Clarity LIMS server v
 its REST API. The goal is to provide simple access to the most common
 entities and their attributes in a reasonably Pythonic fashion.
 
-Supported python versions :
 
-2.6   
-2.7 (recommended)  
-3.4  
-3.5  
+### Compatibility
+From version **1.0.0** the scripts have been ported to support **Python 3**,
+and it is backwards compatible with **Python 2** as well. The previous versions
+(**<0.4.6**) are only compatible with **Python 2**.
 
 ### Design
 
@@ -39,6 +38,12 @@ or for the cutting edge version:
 
 ```
 pip install https://github.com/SciLifeLab/genologics/tarball/master
+```
+
+For installing an older version:
+
+```
+pip install "genologics==0.4.*"
 ```
 
 ### Usage
@@ -86,9 +91,9 @@ Some examples of how it can be used can be fount in [tests directory](https://gi
 
 ### Pull requests policy
 
-Pull requests are welcome, and will be tested internally before merging. Be aware that this process might take a fair amount of time. 
+Pull requests are welcome, and will be tested internally before merging. Be aware that this process might take a fair amount of time.
 
-### Known bugs 
+### Known bugs
 
 - Artifact state is part of its URL (as a query parameter).
   It is not entirely clear how to deal with this in the Lims.cache:
