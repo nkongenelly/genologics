@@ -14,6 +14,7 @@ import os
 import re
 from io import BytesIO
 import requests
+from urllib.parse import urlparse
 
 # python 2.7, 3+ compatibility
 from sys import version_info
@@ -36,7 +37,7 @@ if version_info[:2] < (2,7):
     ElementTree.ParseError = expat.ExpatError
     p26_write = ElementTree.ElementTree.write
     def write_with_xml_declaration(self, file, encoding, xml_declaration):
-        assert xml_declaration is True # Support our use case only 
+        assert xml_declaration is True # Support our use case only
         file.write("<?xml version='1.0' encoding='utf-8'?>\n")
         p26_write(self, file, encoding=encoding)
     ElementTree.ElementTree.write = write_with_xml_declaration
@@ -55,7 +56,7 @@ class Lims(object):
                     For example: https://genologics.scilifelab.se:8443/
         username: The account name of the user to login as.
         password: The password for the user account to login as.
-        version: The optional LIMS API version, by default 'v2' 
+        version: The optional LIMS API version, by default 'v2'
         """
         self.baseuri = baseuri.rstrip('/') + '/'
         self.username = username
@@ -213,7 +214,7 @@ class Lims(object):
     def get_udfs(self, name=None, attach_to_name=None, attach_to_category=None, start_index=None, add_info=False):
         """Get a list of udfs, filtered by keyword arguments.
         name: name of udf
-        attach_to_name: item in the system, to wich the udf is attached, such as 
+        attach_to_name: item in the system, to wich the udf is attached, such as
             Sample, Project, Container, or the name of a process.
         attach_to_category: If 'attach_to_name' is the name of a process, such as 'CaliperGX QC (DNA)',
              then you need to set attach_to_category='ProcessType'. Must not be provided otherwise.
@@ -551,7 +552,8 @@ class Lims(object):
         needs_request = False
         instance_map = {}
         for instance in instances:
-            instance_map[instance.id] = instance
+            instance_map[instance.uri] = instance
+
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                           rel=instance.__class__._URI))
@@ -562,8 +564,19 @@ class Lims(object):
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in root.getchildren():
-                instance = instance_map[node.attrib['limsid']]
+                uri = node.attrib['uri']
+                if uri in instance_map:
+                    instance = instance_map[uri]
+                else:
+                    # We're getting a uri we didn't ask for. This should mean that we
+                    # asked for one without the state flag but are getting one with it
+                    parsed = urlparse(uri)
+                    uri_without_state_param = "{}://{}{}".format(
+                            parsed.scheme, parsed.netloc, parsed.path)
+                    instance = instance_map[uri_without_state_param]
+                    node.attrib['uri'] = uri_without_state_param
                 instance.root = node
+
         return list(instance_map.values())
 
     def put_batch(self, instances):
