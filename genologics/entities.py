@@ -1190,16 +1190,16 @@ class Step(Entity):
     _URI = "steps"
     _PREFIX = "stp"
 
-    current_state = StringAttributeDescriptor("current-state")
-    _reagent_lots = EntityDescriptor("reagent-lots", StepReagentLots)
-    actions = EntityDescriptor("actions", StepActions)
-    date_started = StringDescriptor("date-started")
-    date_completed = StringDescriptor("date-completed")
-    placements = EntityDescriptor("placements", StepPlacements)
-    details = EntityDescriptor("details", StepDetails)
-    step_pools = EntityDescriptor("pools", StepPools)
-    program_status = EntityDescriptor("program-status", StepProgramStatus)
-    reagents = EntityDescriptor("reagents", StepReagents)
+    current_state = StringAttributeDescriptor('current-state')
+    _reagent_lots = EntityDescriptor('reagent-lots', StepReagentLots)
+    actions       = EntityDescriptor('actions', StepActions)
+    placements    = EntityDescriptor('placements', StepPlacements)
+    details       = EntityDescriptor('details', StepDetails)
+    step_pools         = EntityDescriptor('pools', StepPools)
+    program_status     = EntityDescriptor('program-status', StepProgramStatus)
+    reagents     = EntityDescriptor('reagents', StepReagents)
+    date_started    = StringDescriptor('date-started')
+    date_completed  = StringDescriptor('date-completed')
 
     def advance(self):
         self.get()
