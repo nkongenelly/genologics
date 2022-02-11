@@ -1093,6 +1093,8 @@ class Step(Entity):
     step_pools         = EntityDescriptor('pools', StepPools)
     program_status     = EntityDescriptor('program-status', StepProgramStatus)
     reagents     = EntityDescriptor('reagents', StepReagents)
+    date_started    = StringDescriptor('date-started')
+    date_completed  = StringDescriptor('date-completed')
 
     def advance(self):
         self.get()
