@@ -703,7 +703,7 @@ class Lims:
             uri = self.get_uri(instance.__class__._URI, "batch/retrieve")
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
-            for node in root.getchildren():
+            for node in list(root):
                 uri = node.attrib['uri']
                 if uri in instance_map:
                     instance = instance_map[uri]
