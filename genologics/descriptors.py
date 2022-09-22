@@ -201,7 +201,7 @@ class UdfDictionary(object):
                 self._elems = elem.findall(nsmap('udf:field'))
         else:
             tag = nsmap('udf:field')
-            for elem in self.rootnode.getchildren():
+            for elem in list(self.rootnode):
                 if elem.tag == tag:
                     self._elems.append(elem)
 
