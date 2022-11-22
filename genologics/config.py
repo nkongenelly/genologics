@@ -1,7 +1,7 @@
 import os
 import sys
 import warnings
-from configparser import RawConfigParser
+from configparser import ConfigParser
 
 
 
@@ -18,7 +18,7 @@ spec_config = None
 
 
 def get_config_info(config_file):
-    config = RawConfigParser()
+    config = ConfigParser(interpolation=None)
     config.read_file(open(config_file))
 
 
@@ -43,7 +43,7 @@ def load_config(specified_config=None):
     if specified_config is not None:
         config_file = specified_config
     else:
-        config = RawConfigParser()
+        config = ConfigParser(interpolation=None)
         try:
             conf_file = config.read(
                 [
