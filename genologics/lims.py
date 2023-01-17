@@ -557,7 +557,7 @@ class Lims(object):
             uri = self.get_uri(instance.__class__._URI, 'batch/retrieve')
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
-            for node in root.getchildren():
+            for node in list(root):
                 instance = instance_map[node.attrib['limsid']]
                 instance.root = node
         return list(instance_map.values())
