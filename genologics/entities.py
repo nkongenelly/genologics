@@ -1062,7 +1062,7 @@ class Step(Entity):
             These need to be queued for that step for the query to be successful.
         """
         if not isinstance(protocol_step, ProtocolStep):
-            raise TypeError('%s is not of type Container'%protocol_step)
+            raise TypeError('%s is not of type ProtocolStep'%protocol_step)
         elif not isinstance(container_type, Containertype):
             raise TypeError('%s is not of type Containertype'%container_type)
         elif not all([isinstance(input, Artifact) for input in inputs]):
