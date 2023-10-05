@@ -1035,6 +1035,8 @@ class Step(Entity):
     current_state = StringAttributeDescriptor('current-state')
     _reagent_lots = EntityDescriptor('reagent-lots', StepReagentLots)
     actions       = EntityDescriptor('actions', StepActions)
+    date_started  = StringDescriptor('date-started')
+    date_completed     = StringDescriptor('date-completed')
     placements    = EntityDescriptor('placements', StepPlacements)
     details       = EntityDescriptor('details', StepDetails)
     step_pools         = EntityDescriptor('pools', StepPools)
