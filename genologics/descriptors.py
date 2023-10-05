@@ -105,7 +105,7 @@ class StringDictionaryDescriptor(TagDescriptor):
         result = dict()
         node = instance.root.find(self.tag)
         if node is not None:
-            for node2 in node.getchildren():
+            for node2 in list(node):
                 result[node2.tag] = node2.text
         return result
 
@@ -194,7 +194,7 @@ class UdfDictionary(object):
                 self._elems = elem.findall(nsmap('udf:field'))
         else:
             tag = nsmap('udf:field')
-            for elem in self.rootnode.getchildren():
+            for elem in list(self.rootnode):
                 if elem.tag == tag:
                     self._elems.append(elem)
 

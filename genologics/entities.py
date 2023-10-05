@@ -533,7 +533,7 @@ class Udfconfig(Entity):
     show_in_tables                = BooleanDescriptor('show-in-tables')
     is_editable                   = BooleanDescriptor('is-editable')
     is_required                   = BooleanDescriptor('is-required')
-    is_deviation                  = BooleanDescriptor('is-deviation') 
+    is_deviation                  = BooleanDescriptor('is-deviation')
     is_controlled_vocabulary      = BooleanDescriptor('is-controlled-vocabulary')
     presets                       = StringListDescriptor('preset')
 
@@ -652,8 +652,8 @@ class Process(Entity):
         return [a for a in artifacts if a.output_type == 'ResultFile']
 
     def analytes(self):
-        """Retreving the output Analytes of the process, if existing. 
-        If the process is not producing any output analytes, the input 
+        """Retreving the output Analytes of the process, if existing.
+        If the process is not producing any output analytes, the input
         analytes are returned. Input/Output is returned as a information string.
         Makes aggregate processes and normal processes look the same."""
         info = 'Output'
@@ -1026,8 +1026,6 @@ class StepReagents(Entity):
     output_reagents = OutputReagentList(Artifact)
 
 
-
-
 class Step(Entity):
     "Step, as defined by the genologics API."
 
@@ -1037,6 +1035,8 @@ class Step(Entity):
     current_state = StringAttributeDescriptor('current-state')
     _reagent_lots = EntityDescriptor('reagent-lots', StepReagentLots)
     actions       = EntityDescriptor('actions', StepActions)
+    date_started  = StringDescriptor('date-started')
+    date_completed     = StringDescriptor('date-completed')
     placements    = EntityDescriptor('placements', StepPlacements)
     details       = EntityDescriptor('details', StepDetails)
     step_pools         = EntityDescriptor('pools', StepPools)
@@ -1053,6 +1053,46 @@ class Step(Entity):
     @property
     def reagent_lots(self):
         return self._reagent_lots.reagent_lots
+
+    @classmethod
+    def create(cls, lims, protocol_step, container_type, inputs, **kwargs):
+        """
+        Create a new instance of a Step. This method will start a step from queued artifacts.
+
+        :param protocol_step: the ProtocolStep class object specifying the step to start.
+        :param inputs: A list of Aritfact class objects as input to the step.
+            These need to be queued for that step for the query to be successful.
+        """
+        if not isinstance(protocol_step, ProtocolStep):
+            raise TypeError('%s is not of type ProtocolStep'%protocol_step)
+        elif not isinstance(container_type, Containertype):
+            raise TypeError('%s is not of type Containertype'%container_type)
+        elif not all([isinstance(input, Artifact) for input in inputs]):
+            raise TypeError('%s does not contain only items of type Artifact'%inputs)
+
+        instance = super(Step, cls)._create(lims, creation_tag='step-creation', **kwargs)
+
+        # Setup configuration element
+        configuration_element = ElementTree.SubElement(instance.root, 'configuration')
+        configuration_element.attrib['uri'] = protocol_step.uri
+        configuration_element.text = protocol_step.name
+
+        # Setup container type element
+        container_type_element = ElementTree.SubElement(instance.root, 'container-type')
+        container_type_element.text = container_type.name
+
+        # Setup inputs element
+        inputs_element = ElementTree.SubElement(instance.root, 'inputs')
+        for input in inputs:
+            input_element = ElementTree.SubElement(inputs_element, 'input')
+            input_element.attrib['uri'] = input.uri
+
+        data = lims.tostring(ElementTree.ElementTree(instance.root))
+
+        instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
+        instance._uri = instance.root.attrib['uri']
+
+        return instance
 
 
 class ProtocolStep(Entity):

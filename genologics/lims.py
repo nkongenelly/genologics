@@ -199,7 +199,7 @@ class Lims(object):
                     message += ' ' + node.text
             except ElementTree.ParseError:  # some error messages might not follow the xml standard
                 message = response.content
-            raise requests.exceptions.HTTPError(message)
+            raise requests.exceptions.HTTPError(message, response=response)
         return True
 
     def parse_response(self, response, accept_status_codes=[200]):
@@ -543,6 +543,11 @@ class Lims(object):
         """
         if not instances:
             return []
+
+        ALLOWED_TAGS = ('artifact', 'container', 'file', 'sample')
+        if instances[0]._TAG not in ALLOWED_TAGS:
+            raise TypeError("Cannot retrieve batch for instances of type '{}'".format(instances[0]._TAG))
+
         root = ElementTree.Element(nsmap('ri:links'))
         needs_request = False
         instance_map = {}
@@ -557,7 +562,7 @@ class Lims(object):
             uri = self.get_uri(instance.__class__._URI, 'batch/retrieve')
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
-            for node in root.getchildren():
+            for node in list(root):
                 instance = instance_map[node.attrib['limsid']]
                 instance.root = node
         return list(instance_map.values())
@@ -567,6 +572,10 @@ class Lims(object):
 
         if not instances:
             return
+
+        ALLOWED_TAGS = ('artifact', 'container', 'file', 'sample')
+        if instances[0]._TAG not in ALLOWED_TAGS:
+            raise TypeError("Cannot update batch for instances of type '{}'".format(instances[0]._TAG))
 
         root = None  # XML root element for batch request
 
