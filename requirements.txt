@@ -5,6 +5,7 @@ pytest
 requests
 ruff
 six
+sphinxcontrib-programoutput
 types-requests
 types-setuptools
 types-six
