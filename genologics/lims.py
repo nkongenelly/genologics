@@ -35,6 +35,7 @@ if version_info[0] == 2:
 else:
     from urllib.parse import urlencode, urljoin
 
+from xml.etree import ElementTree
 
 from .entities import *
 

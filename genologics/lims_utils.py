@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 
-
 from genologics.config import BASEURI, PASSWORD, USERNAME
-from genologics.lims import *
+from genologics.lims import Artifact, Lims
 
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 

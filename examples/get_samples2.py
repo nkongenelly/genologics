@@ -8,7 +8,7 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 """
 
 from genologics.config import BASEURI, PASSWORD, USERNAME
-from genologics.lims import *
+from genologics.lims import Lims, Project
 
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 lims.check_version()

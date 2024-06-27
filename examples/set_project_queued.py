@@ -11,7 +11,7 @@ import datetime
 
 # Login parameters for connecting to a LIMS instance.
 from genologics.config import BASEURI, PASSWORD, USERNAME
-from genologics.lims import *
+from genologics.lims import Lims, Project
 
 # Create the LIMS interface instance, and check the connection and version.
 lims = Lims(BASEURI, USERNAME, PASSWORD)
