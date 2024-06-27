@@ -24,36 +24,16 @@ import re
 from io import BytesIO
 
 # python 2.7, 3+ compatibility
-from sys import version_info
+from urllib.parse import urlencode, urljoin
+from xml.etree import ElementTree
 
 import requests
-
-if version_info[0] == 2:
-    from urllib import urlencode
-
-    from urlparse import urljoin
-else:
-    from urllib.parse import urlencode, urljoin
-
-from xml.etree import ElementTree
 
 from .entities import *
 
 # Python 2.6 support work-arounds
 # - Exception ElementTree.ParseError does not exist
 # - ElementTree.ElementTree.write does not take arg. xml_declaration
-if version_info[:2] < (2, 7):
-    from xml.parsers import expat
-
-    ElementTree.ParseError = expat.ExpatError
-    p26_write = ElementTree.ElementTree.write
-
-    def write_with_xml_declaration(self, file, encoding, xml_declaration):
-        assert xml_declaration is True  # Support our use case only
-        file.write("<?xml version='1.0' encoding='utf-8'?>\n")
-        p26_write(self, file, encoding=encoding)
-
-    ElementTree.ElementTree.write = write_with_xml_declaration
 
 TIMEOUT = 16
 
@@ -223,9 +203,9 @@ class Lims:
                 node = root.find("message")
                 if node is None:
                     response.raise_for_status()
-                    message = "%s" % (response.status_code)
+                    message = f"{response.status_code}"
                 else:
-                    message = "%s: %s" % (response.status_code, node.text)
+                    message = f"{response.status_code}: {node.text}"
                 node = root.find("suggested-actions")
                 if node is not None:
                     message += " " + node.text
@@ -622,11 +602,11 @@ class Lims:
         "Convert UDF-ish arguments to a params dictionary."
         result = dict()
         for key, value in udf.items():
-            result["udf.%s" % key] = value
+            result[f"udf.{key}"] = value
         if udtname is not None:
             result["udt.name"] = udtname
         for key, value in udt.items():
-            result["udt.%s" % key] = value
+            result[f"udt.{key}"] = value
         return result
 
     def _get_instances(self, klass, add_info=None, params=dict()):
@@ -719,7 +699,7 @@ class Lims:
                 # Tag is art:details, con:details, etc.
                 example_root = instance.root
                 ns_uri = re.match("{(.*)}.*", example_root.tag).group(1)
-                root = ElementTree.Element("{%s}details" % (ns_uri))
+                root = ElementTree.Element(f"{{{ns_uri}}}details")
 
             root.append(instance.root)
 
@@ -770,7 +750,7 @@ class Lims:
             nm = ElementTree.SubElement(el, "name")
             nm.text = name
 
-        ty = ElementTree.SubElement(
+        ElementTree.SubElement(
             el, "type", attrib={"uri": container_type.uri, "name": container_type.name}
         )
         ret_el = self.post(

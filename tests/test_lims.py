@@ -9,18 +9,13 @@ try:
 except NameError:  # callable() doesn't exist in Python 3.0 and 3.1
     import collections
 
-    callable = lambda obj: isinstance(obj, collections.Callable)
+    def callable(obj):
+        return isinstance(obj, collections.Callable)
 
 
-from sys import version_info
 
-if version_info[0] == 2:
-    from unittest.mock import Mock, patch
-
-    import __builtin__ as builtins
-else:
-    import builtins
-    from unittest.mock import Mock, patch
+import builtins
+from unittest.mock import Mock, patch
 
 
 class TestLims(TestCase):
@@ -86,7 +81,7 @@ class TestLims(TestCase):
         with patch(
             "requests.put", return_value=Mock(content=self.sample_xml, status_code=200)
         ) as mocked_put:
-            response = lims.put(uri=uri, data=self.sample_xml)
+            lims.put(uri=uri, data=self.sample_xml)
             assert mocked_put.call_count == 1
         with patch(
             "requests.put", return_value=Mock(content=self.error_xml, status_code=400)
@@ -100,7 +95,7 @@ class TestLims(TestCase):
         with patch(
             "requests.post", return_value=Mock(content=self.sample_xml, status_code=200)
         ) as mocked_put:
-            response = lims.post(uri=uri, data=self.sample_xml)
+            lims.post(uri=uri, data=self.sample_xml)
             assert mocked_put.call_count == 1
         with patch(
             "requests.post", return_value=Mock(content=self.error_xml, status_code=400)
@@ -163,9 +158,9 @@ class TestLims(TestCase):
         from xml.etree import ElementTree as ET
 
         a = ET.Element("a")
-        b = ET.SubElement(a, "b")
+        ET.SubElement(a, "b")
         c = ET.SubElement(a, "c")
-        d = ET.SubElement(c, "d")
+        ET.SubElement(c, "d")
         etree = ET.ElementTree(a)
         expected_string = b"""<?xml version='1.0' encoding='utf-8'?>
 <a><b /><c><d /></c></a>"""

@@ -1,5 +1,5 @@
-from sys import version_info
 from unittest import TestCase
+from unittest.mock import Mock, patch
 from xml.etree import ElementTree
 
 from genologics.entities import (
@@ -17,11 +17,6 @@ from genologics.entities import (
     StepPools,
 )
 from genologics.lims import Lims
-
-if version_info[0] == 2:
-    from unittest.mock import Mock, patch
-else:
-    from unittest.mock import Mock, patch
 
 url = "http://testgenologics.com:4040"
 
@@ -180,19 +175,19 @@ class TestEntities(TestCase):
 
 def elements_equal(e1, e2):
     if e1.tag != e2.tag:
-        print("Tag: %s != %s" % (e1.tag, e2.tag))
+        print(f"Tag: {e1.tag} != {e2.tag}")
         return False
     if e1.text and e2.text and e1.text.strip() != e2.text.strip():
-        print("Text: %s != %s" % (e1.text.strip(), e2.text.strip()))
+        print(f"Text: {e1.text.strip()} != {e2.text.strip()}")
         return False
     if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip():
-        print("Tail: %s != %s" % (e1.tail.strip(), e2.tail.strip()))
+        print(f"Tail: {e1.tail.strip()} != {e2.tail.strip()}")
         return False
     if e1.attrib != e2.attrib:
-        print("Attrib: %s != %s" % (e1.attrib, e2.attrib))
+        print(f"Attrib: {e1.attrib} != {e2.attrib}")
         return False
     if len(e1) != len(e2):
-        print("length %s (%s) != length (%s) " % (e1.tag, len(e1), e2.tag, len(e2)))
+        print(f"length {e1.tag} ({len(e1)}) != length ({e2.tag}) ")
         return False
     return all(
         elements_equal(c1, c2)
@@ -350,7 +345,7 @@ class TestStepPlacements(TestEntities):
         c1 = Container(
             uri="http://testgenologics.com:4040/containers/c1", lims=self.lims
         )
-        c2 = Container(
+        Container(
             uri="http://testgenologics.com:4040/containers/c2", lims=self.lims
         )
 
@@ -441,14 +436,14 @@ class TestReagentKits(TestEntities):
             assert r.name == "regaentkitname"
             assert r.supplier == "reagentProvider"
             assert r.website == "www.reagentprovider.com"
-            assert r.archived == False
+            assert r.archived is False
 
     def test_create_entity(self):
         with patch(
             "genologics.lims.requests.post",
             return_value=Mock(content=self.reagentkit_xml, status_code=201),
         ):
-            r = ReagentKit.create(
+            ReagentKit.create(
                 self.lims,
                 name="regaentkitname",
                 supplier="reagentProvider",
@@ -482,7 +477,7 @@ class TestReagentLots(TestEntities):
         with patch(
             "genologics.lims.requests.post",
             return_value=Mock(content=self.reagentlot_xml, status_code=201),
-        ) as patch_post:
+        ):
             l = ReagentLot.create(
                 self.lims,
                 reagent_kit=r,
@@ -504,7 +499,7 @@ class TestSample(TestEntities):
             "genologics.lims.requests.post",
             return_value=Mock(content=self.sample_creation, status_code=201),
         ) as patch_post:
-            l = Sample.create(
+            Sample.create(
                 self.lims,
                 project=Project(self.lims, uri="project"),
                 container=Container(self.lims, uri="container"),

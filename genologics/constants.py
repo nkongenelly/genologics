@@ -52,4 +52,4 @@ def nsmap(tag):
     parts = tag.split(":")
     if len(parts) != 2:
         raise ValueError("no namespace specifier in tag")
-    return "{%s}%s" % (_NSMAP[parts[0]], parts[1])
+    return f"{{{_NSMAP[parts[0]]}}}{parts[1]}"

@@ -117,7 +117,7 @@ class IntegerDescriptor(StringDescriptor):
     """
 
     def __get__(self, instance, cls):
-        text = super(IntegerDescriptor, self).__get__(instance, cls)
+        text = super().__get__(instance, cls)
         if text is not None:
             return int(text)
 
@@ -138,12 +138,12 @@ class BooleanDescriptor(StringDescriptor):
     """
 
     def __get__(self, instance, cls):
-        text = super(BooleanDescriptor, self).__get__(instance, cls)
+        text = super().__get__(instance, cls)
         if text is not None:
             return text.lower() == "true"
 
     def __set__(self, instance, value):
-        super(BooleanDescriptor, self).__set__(instance, str(value).lower())
+        super().__set__(instance, str(value).lower())
 
 
 class UdfDictionary:
@@ -170,7 +170,7 @@ class UdfDictionary:
         return self._rootnode
 
     def get_udt(self):
-        if self._udt == True:
+        if self._udt is True:
             return None
         else:
             return self._udt
@@ -263,7 +263,7 @@ class UdfDictionary:
                     raise TypeError("URI UDF requires str or punycode (unicode) value")
                 value = str(value)
             else:
-                raise NotImplementedError("UDF type '%s'" % vtype)
+                raise NotImplementedError(f"UDF type '{vtype}'")
             if not isinstance(value, str):
                 if not self._is_string(value):
                     value = str(value).encode("UTF-8")
@@ -283,7 +283,7 @@ class UdfDictionary:
                 value = str(value)
             else:
                 raise NotImplementedError(
-                    "Cannot handle value of type '%s'" " for UDF" % type(value)
+                    f"Cannot handle value of type '{type(value)}'" " for UDF"
                 )
             if self._udt:
                 root = self.rootnode.find(nsmap("udf:type"))
@@ -399,7 +399,7 @@ class EntityDescriptor(TagDescriptor):
     "An instance attribute referencing another entity instance."
 
     def __init__(self, tag, klass):
-        super(EntityDescriptor, self).__init__(tag)
+        super().__init__(tag)
         self.klass = klass
 
     def __get__(self, instance, cls):
@@ -438,7 +438,7 @@ class EntityListDescriptor(EntityDescriptor):
 
 class NestedBooleanDescriptor(TagDescriptor):
     def __init__(self, tag, *args):
-        super(NestedBooleanDescriptor, self).__init__(tag)
+        super().__init__(tag)
         self.rootkeys = args
 
     def __get__(self, instance, cls):
@@ -459,7 +459,7 @@ class NestedBooleanDescriptor(TagDescriptor):
 
 class NestedStringDescriptor(TagDescriptor):
     def __init__(self, tag, *args):
-        super(NestedStringDescriptor, self).__init__(tag)
+        super().__init__(tag)
         self.rootkeys = args
 
     def __get__(self, instance, cls):
@@ -640,7 +640,7 @@ class OutputReagentList(BaseDescriptor):
                 out_r, "output", attrib={"uri": artifact.uri}
             )
             for reagent_label_name in value[artifact]:
-                rea_l = ElementTree.SubElement(
+                ElementTree.SubElement(
                     out_a, "reagent-label", attrib={"name": reagent_label_name}
                 )
 
@@ -728,7 +728,7 @@ class ProcessTypeProcessInputDescriptor(TagDescriptor):
     def __init__(self):
         self._inputs = []
         self.tag = "process-input"
-        super(ProcessTypeProcessInputDescriptor, self).__init__(tag=self.tag)
+        super().__init__(tag=self.tag)
 
     def __get__(self, instance, owner):
         from genologics.internal_classes import ProcessTypeProcessInput
@@ -754,7 +754,7 @@ class ProcessTypeProcessOutputDescriptor(TagDescriptor):
     def __init__(self):
         self._inputs = []
         self.tag = "process-output"
-        super(ProcessTypeProcessOutputDescriptor, self).__init__(tag=self.tag)
+        super().__init__(tag=self.tag)
 
     def __get__(self, instance, owner):
         from genologics.internal_classes import ProcessTypeProcessOutput

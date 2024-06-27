@@ -1,6 +1,6 @@
 from io import BytesIO
-from sys import version_info
 from unittest import TestCase
+from unittest.mock import Mock
 from xml.etree import ElementTree
 
 from genologics.descriptors import (
@@ -15,11 +15,6 @@ from genologics.descriptors import (
 )
 from genologics.entities import Artifact
 from genologics.lims import Lims
-
-if version_info[0] == 2:
-    from unittest.mock import Mock
-else:
-    from unittest.mock import Mock
 
 
 class TestDescriptor(TestCase):
@@ -97,7 +92,7 @@ class TestBooleanDescriptor(TestDescriptor):
 
     def test__get__(self):
         bd = self._make_desc(BooleanDescriptor, "istest")
-        assert bd.__get__(self.instance, None) == True
+        assert bd.__get__(self.instance, None) is True
 
     def test__set__(self):
         bd = self._make_desc(BooleanDescriptor, "istest")

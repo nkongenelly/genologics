@@ -321,7 +321,7 @@ class ReadResultFiles:
                 keys = line
         if duplicated_lines:
             error_message = (
-                "Row names {0} occurs more than once in file {1}. "
+                "Row names {} occurs more than once in file {}. "
                 "Fix the file to continue. "
             ).format(",".join(duplicated_lines), name)
         if not file_info:

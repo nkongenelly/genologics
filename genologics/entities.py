@@ -96,7 +96,7 @@ class SampleHistory:
                 logger.info(f"\t{key2}")
                 for key, value in dict2.items():
                     logger.info(
-                        "\t\t{0}->{1}".format(
+                        "\t\t{}->{}".format(
                             key, (value if value is not None else "None")
                         )
                     )
@@ -134,7 +134,6 @@ class SampleHistory:
         qc processes too) and puts everything in a dictionnary.
         """
         history = {}
-        hist_list = []
         # getting the list of all expected analytes.
         artifacts = self.lims.get_artifacts(
             sample_name=self.sample_name, type="Analyte", resolve=False
@@ -332,10 +331,10 @@ class Entity:
         self.root = None
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.id)
+        return f"{self.__class__.__name__}({self.id})"
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.uri)
+        return f"{self.__class__.__name__}({self.uri})"
 
     @property
     def uri(self):
@@ -390,8 +389,7 @@ class Entity:
                 setattr(instance, attribute, kwargs.get(attribute))
             else:
                 raise TypeError(
-                    "%s create: got an unexpected keyword argument '%s'"
-                    % (cls.__name__, attribute)
+                    f"{cls.__name__} create: got an unexpected keyword argument '{attribute}'"
                 )
 
         return instance
@@ -458,7 +456,7 @@ class Researcher(Entity):
 
     @property
     def name(self):
-        return "%s %s" % (self.first_name, self.last_name)
+        return f"{self.first_name} {self.last_name}"
 
 
 class Permission(Entity):
@@ -543,8 +541,8 @@ class Sample(Entity):
         if udfs is None:
             udfs = {}
         if not isinstance(container, Container):
-            raise TypeError("%s is not of type Container" % container)
-        instance = super(Sample, cls)._create(
+            raise TypeError(f"{container} is not of type Container")
+        instance = super()._create(
             lims, creation_tag="samplecreation", udfs=udfs, **kwargs
         )
 
@@ -623,7 +621,7 @@ class Processtype(Entity):
     _PREFIX = "ptp"
 
     def __init__(self, lims, uri=None, id=None, _create_new=False):
-        super(Processtype, self).__init__(lims, uri, id, _create_new)
+        super().__init__(lims, uri, id, _create_new)
         self.parameters = ProcessTypeParametersDescriptor(self)
 
     name = StringAttributeDescriptor("name")
@@ -1193,13 +1191,13 @@ class Step(Entity):
             These need to be queued for that step for the query to be successful.
         """
         if not isinstance(protocol_step, ProtocolStep):
-            raise TypeError("%s is not of type ProtocolStep" % protocol_step)
+            raise TypeError(f"{protocol_step} is not of type ProtocolStep")
         elif not isinstance(container_type, Containertype):
-            raise TypeError("%s is not of type Containertype" % container_type)
+            raise TypeError(f"{container_type} is not of type Containertype")
         elif not all([isinstance(input, Artifact) for input in inputs]):
-            raise TypeError("%s does not contain only items of type Artifact" % inputs)
+            raise TypeError(f"{inputs} does not contain only items of type Artifact")
 
-        instance = super(Step, cls)._create(
+        instance = super()._create(
             lims, creation_tag="step-creation", **kwargs
         )
 
@@ -1307,7 +1305,7 @@ class ReagentType(Entity):
     name = StringAttributeDescriptor("name")
 
     def __init__(self, lims, uri=None, id=None):
-        super(ReagentType, self).__init__(lims, uri, id)
+        super().__init__(lims, uri, id)
         assert self.uri is not None
         self.root = lims.get(self.uri)
         self.sequence = None

@@ -42,7 +42,7 @@ class TestLog(TestCase):
         saved_stderr = sys.stderr
         tmp_stderr = os.path.join(tmp_dir_path, "tmp_stderr")
         with open(tmp_stderr, "w") as sys.stderr:
-            with EppLogger(tmp_file, prepend=False) as epp_logger:
+            with EppLogger(tmp_file, prepend=False):
                 print("stderr nosetest", file=sys.stderr)
         sys.stderr = saved_stderr
         with open(tmp_stderr) as stderr:
@@ -59,7 +59,7 @@ class TestLog(TestCase):
         saved_stdout = sys.stdout
         tmp_stdout = os.path.join(tmp_dir_path, "tmp_stdout")
         with open(tmp_stdout, "w") as sys.stdout:
-            with EppLogger(tmp_file, prepend=False) as epp_logger:
+            with EppLogger(tmp_file, prepend=False):
                 print("stdout nosetest", file=sys.stdout)
         sys.stdout = saved_stdout
         with open(tmp_stdout) as stdout:

@@ -1,15 +1,9 @@
-from sys import version_info
 from unittest import TestCase, main
+from unittest.mock import patch
 
 from genologics import test_utils
 from genologics.entities import Project
 from genologics.lims import Lims
-
-if version_info[0] == 2:
-    from unittest.mock import patch
-else:
-    from unittest.mock import patch
-
 
 test_utils.XML_DICT = {
     "https://test.claritylims.com/api/v2/projects/BLA1": """
@@ -27,7 +21,7 @@ test_utils.XML_DICT = {
 class TestExample(TestCase):
     def __init__(self, *args, **kwargs):
         self.lims = Lims("https://test.claritylims.com", "user", "password")
-        super(TestExample, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_project_example(self):
         with patch("genologics.lims.Lims.get", side_effect=test_utils.patched_get):

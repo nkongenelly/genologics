@@ -53,7 +53,7 @@ def dump_source_xml(lims):
     for k, v in lims.cache.items():
         final_string.append(f"'{k}':")
         v.get()
-        final_string.append('"""{0}""",'.format(v.xml().replace("\n", "\n")))
+        final_string.append('"""{}""",'.format(v.xml().replace("\n", "\n")))
     final_string.append("}")
 
     return "\n".join(final_string)

@@ -39,7 +39,7 @@ def get_config_info(config_file):
 
 
 def load_config(specified_config=None):
-    if specified_config != None:
+    if specified_config is not None:
         config_file = specified_config
     else:
         config = SafeConfigParser()
