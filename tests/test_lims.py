@@ -13,7 +13,6 @@ except NameError:  # callable() doesn't exist in Python 3.0 and 3.1
         return isinstance(obj, collections.Callable)
 
 
-
 import builtins
 from unittest.mock import Mock, patch
 
@@ -37,9 +36,10 @@ class TestLims(TestCase):
 
     def test_get_uri(self):
         lims = Lims(self.url, username=self.username, password=self.password)
-        assert lims.get_uri(
-            "artifacts", sample_name="test_sample"
-        ) == f"{self.url}/api/v2/artifacts?sample_name=test_sample"
+        assert (
+            lims.get_uri("artifacts", sample_name="test_sample")
+            == f"{self.url}/api/v2/artifacts?sample_name=test_sample"
+        )
 
     def test_parse_response(self):
         lims = Lims(self.url, username=self.username, password=self.password)
@@ -60,9 +60,7 @@ class TestLims(TestCase):
     )
     def test_get(self, mocked_instance):
         lims = Lims(self.url, username=self.username, password=self.password)
-        r = lims.get(
-            f"{self.url}/api/v2/artifacts?sample_name=test_sample"
-        )
+        r = lims.get(f"{self.url}/api/v2/artifacts?sample_name=test_sample")
         assert r is not None
         assert callable(r.find)
         assert hasattr(r.attrib, "__getitem__")

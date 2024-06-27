@@ -7,7 +7,6 @@ Usage example: Get artifacts and artifact info.
 Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 """
 
-
 # Login parameters for connecting to a LIMS instance.
 from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.lims import Lims
