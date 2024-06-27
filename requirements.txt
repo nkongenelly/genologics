@@ -1,4 +1,7 @@
-requests
-pytest
 mock
+mypy
+pipreqs
+pytest
+requests
+ruff
 six
