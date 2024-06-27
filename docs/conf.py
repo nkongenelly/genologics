@@ -25,7 +25,7 @@
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
-    "sphinx.ext.pngmath",
+    "sphinx.ext.imgmath",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinxcontrib.programoutput",
