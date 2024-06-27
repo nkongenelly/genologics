@@ -6,20 +6,15 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
 
-import six
-
-from genologics.constants import nsmap
-
-try:
-    from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
-except ImportError:
-    pass
-
 import datetime
 import logging
 import time
 from decimal import Decimal
 from xml.etree import ElementTree
+
+import six
+
+from genologics.constants import nsmap
 
 logger = logging.getLogger(__name__)
 
