@@ -7,9 +7,8 @@ Usage examples: Get some samples, and sample info.
 Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 """
 
+from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.lims import *
-
-from genologics.config import BASEURI, USERNAME, PASSWORD
 
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 lims.check_version()

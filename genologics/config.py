@@ -1,6 +1,4 @@
 import os
-import sys
-import warnings
 
 try:
     from ConfigParser import SafeConfigParser

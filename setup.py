@@ -1,8 +1,8 @@
-from setuptools import setup, find_packages
-from genologics.version import __version__
-import sys, os
-import subprocess
 import glob
+
+from setuptools import find_packages, setup
+
+from genologics.version import __version__
 
 # Fetch version from git tags.
 # if git is not available (PyPi package), use stored version.py.

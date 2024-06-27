@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 """Contains useful and reusable code for EPP scripts.
 
@@ -8,18 +7,20 @@ Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2013 Johannes Alneberg
 """
 
+import csv
 import logging
-import sys
 import os
+import sys
+from logging.handlers import RotatingFileHandler
+from shutil import copy
+from time import localtime, strftime
+
 import pkg_resources
 from pkg_resources import DistributionNotFound
-from shutil import copy
 from requests import HTTPError
-from genologics.entities import Artifact
+
 from genologics.config import MAIN_LOG
-from logging.handlers import RotatingFileHandler
-from time import strftime, localtime
-import csv
+from genologics.entities import Artifact
 
 
 def attach_file(src, resource):
@@ -50,19 +51,19 @@ class NotUniqueError(ValueError):
 def unique_check(l, msg):
     "Check that l is of length 1, otherwise raise error, with msg appended"
     if len(l) == 0:
-        raise EmptyError("No item found for {0}".format(msg))
+        raise EmptyError(f"No item found for {msg}")
     elif len(l) != 1:
-        raise NotUniqueError("Multiple items found for {0}".format(msg))
+        raise NotUniqueError(f"Multiple items found for {msg}")
 
 
 def set_field(element):
     try:
         element.put()
     except (TypeError, HTTPError) as e:
-        logging.warning("Error while updating element: {0}".format(e))
+        logging.warning(f"Error while updating element: {e}")
 
 
-class EppLogger(object):
+class EppLogger:
     """Context manager for logging module useful for EPP script execution.
 
     This context manager (CM) automatically logs what script that is executed,
@@ -80,17 +81,17 @@ class EppLogger(object):
     PACKAGE = "genologics"
 
     def __enter__(self):
-        logging.info("Executing file: {0}".format(sys.argv[0]))
-        logging.info("with parameters: {0}".format(sys.argv[1:]))
+        logging.info(f"Executing file: {sys.argv[0]}")
+        logging.info(f"with parameters: {sys.argv[1:]}")
         try:
             logging.info(
-                "Version of {0}: ".format(self.PACKAGE)
+                f"Version of {self.PACKAGE}: "
                 + pkg_resources.require(self.PACKAGE)[0].version
             )
         except DistributionNotFound as e:
             logging.error(e)
             logging.error(
-                ("Make sure you have the {0} " "package installed").format(self.PACKAGE)
+                f"Make sure you have the {self.PACKAGE} " "package installed"
             )
             sys.exit(-1)
         return self
@@ -184,21 +185,21 @@ class EppLogger(object):
                         f.write("=" * 80 + "\n")
             except HTTPError:  # Probably no artifact found, skip prepending
                 print(
-                    ("No log file artifact found " "for id: {0}").format(log_file_name),
+                    ("No log file artifact found " f"for id: {log_file_name}"),
                     file=sys.stderr,
                 )
-            except IOError as e:  # Probably some path was wrong in copy
+            except OSError as e:  # Probably some path was wrong in copy
                 print(
                     (
                         "Log could not be prepended, "
-                        "make sure {0} and {1} are "
+                        f"make sure {log_path} and {log_file_name} are "
                         "proper paths."
-                    ).format(log_path, log_file_name),
+                    ),
                     file=sys.stderr,
                 )
                 raise e
 
-    class StreamToLogger(object):
+    class StreamToLogger:
         """Fake file-like stream object that redirects writes to a logger
         instance.
 
@@ -247,7 +248,7 @@ class ReadResultFiles:
         for outart in outarts:
             file_path = self.get_file_path(outart)
             if file_path:
-                of = open(file_path, "r")
+                of = open(file_path)
                 file_ext = file_path.split(".")[-1]
                 if file_ext == "csv":
                     pf = [row for row in csv.reader(of.read().splitlines())]
@@ -324,16 +325,14 @@ class ReadResultFiles:
                 "Fix the file to continue. "
             ).format(",".join(duplicated_lines), name)
         if not file_info:
-            error_message = error_message + "Could not format parsed file {0}.".format(
-                name
-            )
+            error_message = error_message + f"Could not format parsed file {name}."
         if error_message:
             print(error_message, file=sys.stderr)
             sys.exit(-1)
         return file_info
 
 
-class CopyField(object):
+class CopyField:
     """Class to copy any filed (or udf) from any lims element to any
     udf on any other lims element
 
@@ -380,7 +379,7 @@ class CopyField(object):
             elt.put()
             return True
         except (TypeError, HTTPError) as e:
-            print("Error while updating element: {0}".format(e), file=sys.stderr)
+            print(f"Error while updating element: {e}", file=sys.stderr)
             sys.exit(-1)
             return False
 
@@ -404,9 +403,7 @@ class CopyField(object):
             )
 
         logging.info(
-            ("Copying from element with id: {0} to element with " " id: {1}").format(
-                self.s_elt.id, self.d_elt.id
-            )
+            f"Copying from element with id: {self.s_elt.id} to element with " f" id: {self.d_elt.id}"
         )
 
     def _log_after_change(self):

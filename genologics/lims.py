@@ -22,17 +22,18 @@ __all__ = [
 import os
 import re
 from io import BytesIO
-import requests
 
 # python 2.7, 3+ compatibility
 from sys import version_info
 
+import requests
+
 if version_info[0] == 2:
-    from urlparse import urljoin
     from urllib import urlencode
+
+    from urlparse import urljoin
 else:
-    from urllib.parse import urljoin
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urljoin
 
 
 from .entities import *
@@ -56,7 +57,7 @@ if version_info[:2] < (2, 7):
 TIMEOUT = 16
 
 
-class Lims(object):
+class Lims:
     "LIMS interface through which all entity instances are retrieved."
 
     VERSION = "v2"
@@ -101,7 +102,7 @@ class Lims(object):
                 timeout=TIMEOUT,
             )
         except requests.exceptions.Timeout as e:
-            raise type(e)("{0}, Error trying to reach {1}".format(str(e), uri))
+            raise type(e)(f"{str(e)}, Error trying to reach {uri}")
 
         else:
             return self.parse_response(r)
@@ -128,7 +129,7 @@ class Lims(object):
         """Upload a file and attach it to the provided entity."""
         file_to_upload = os.path.abspath(file_to_upload)
         if not os.path.isfile(file_to_upload):
-            raise IOError("{} not found".format(file_to_upload))
+            raise OSError(f"{file_to_upload} not found")
 
         # Request the storage space on glsstorage
         # Create the xml to describe the file
@@ -674,9 +675,7 @@ class Lims(object):
         ALLOWED_TAGS = ("artifact", "container", "file", "sample")
         if instances[0]._TAG not in ALLOWED_TAGS:
             raise TypeError(
-                "Cannot retrieve batch for instances of type '{}'".format(
-                    instances[0]._TAG
-                )
+                f"Cannot retrieve batch for instances of type '{instances[0]._TAG}'"
             )
 
         root = ElementTree.Element(nsmap("ri:links"))
@@ -708,9 +707,7 @@ class Lims(object):
         ALLOWED_TAGS = ("artifact", "container", "file", "sample")
         if instances[0]._TAG not in ALLOWED_TAGS:
             raise TypeError(
-                "Cannot update batch for instances of type '{}'".format(
-                    instances[0]._TAG
-                )
+                f"Cannot update batch for instances of type '{instances[0]._TAG}'"
             )
 
         root = None  # XML root element for batch request

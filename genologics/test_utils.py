@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-from __future__ import unicode_literals
 from xml.etree import ElementTree
-import requests
 
+import requests
 
 """
 In order to use the patched get :
@@ -43,7 +42,7 @@ def patched_get(*args, **kwargs):
     try:
         return ElementTree.fromstring(XML_DICT[r.url])
     except KeyError:
-        raise Exception("Cannot find mocked xml for uri {0}".format(r.url))
+        raise Exception(f"Cannot find mocked xml for uri {r.url}")
 
 
 def dump_source_xml(lims):
@@ -52,7 +51,7 @@ def dump_source_xml(lims):
     final_string = []
     final_string.append("{")
     for k, v in lims.cache.items():
-        final_string.append("'{0}':".format(k))
+        final_string.append(f"'{k}':")
         v.get()
         final_string.append('"""{0}""",'.format(v.xml().replace("\n", "\n")))
     final_string.append("}")

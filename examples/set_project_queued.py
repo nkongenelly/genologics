@@ -9,10 +9,9 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 
 import datetime
 
-from genologics.lims import *
-
 # Login parameters for connecting to a LIMS instance.
-from genologics.config import BASEURI, USERNAME, PASSWORD
+from genologics.config import BASEURI, PASSWORD, USERNAME
+from genologics.lims import *
 
 # Create the LIMS interface instance, and check the connection and version.
 lims = Lims(BASEURI, USERNAME, PASSWORD)

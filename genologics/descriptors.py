@@ -7,24 +7,24 @@ Copyright (C) 2012 Per Kraulis
 """
 
 import six
+
 from genologics.constants import nsmap
 
 try:
-    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+    from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
 except ImportError:
-    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
+    pass
 
-from decimal import Decimal
 import datetime
-import time
-from xml.etree import ElementTree
-
 import logging
+import time
+from decimal import Decimal
+from xml.etree import ElementTree
 
 logger = logging.getLogger(__name__)
 
 
-class BaseDescriptor(object):
+class BaseDescriptor:
     "Abstract base descriptor for an instance attribute."
 
     def __get__(self, instance, cls):
@@ -146,7 +146,7 @@ class BooleanDescriptor(StringDescriptor):
         super(BooleanDescriptor, self).__set__(instance, str(value).lower())
 
 
-class UdfDictionary(object):
+class UdfDictionary:
     "Dictionary-like container of UDFs, optionally within a UDT."
 
     def _is_string(self, value):
@@ -263,7 +263,7 @@ class UdfDictionary(object):
                     raise TypeError("URI UDF requires str or punycode (unicode) value")
                 value = str(value)
             else:
-                raise NotImplemented("UDF type '%s'" % vtype)
+                raise NotImplementedError("UDF type '%s'" % vtype)
             if not isinstance(value, str):
                 if not self._is_string(value):
                     value = str(value).encode("UTF-8")
@@ -692,7 +692,7 @@ class InputOutputMapList(BaseDescriptor):
         return result
 
 
-class ProcessTypeParametersDescriptor(object):
+class ProcessTypeParametersDescriptor:
     def __getitem__(self, index):
         return self.params[index]
 

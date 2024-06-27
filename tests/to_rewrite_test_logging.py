@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-from __future__ import print_function
 
-from os.path import isdir
 import os
 import sys
+from os.path import isdir
 from unittest import TestCase
+
 from genologics.epp import EppLogger
 
 file_path = os.path.realpath(__file__)
@@ -45,11 +45,11 @@ class TestLog(TestCase):
             with EppLogger(tmp_file, prepend=False) as epp_logger:
                 print("stderr nosetest", file=sys.stderr)
         sys.stderr = saved_stderr
-        with open(tmp_stderr, "r") as stderr:
+        with open(tmp_stderr) as stderr:
             stream_lines = stderr.readlines()
         assert "stderr nosetest" in stream_lines[-1]
 
-        with open(tmp_file, "r") as log_file:
+        with open(tmp_file) as log_file:
             log_lines = log_file.readlines()
         assert "stderr nosetest" in log_lines[-1]
 
@@ -62,11 +62,11 @@ class TestLog(TestCase):
             with EppLogger(tmp_file, prepend=False) as epp_logger:
                 print("stdout nosetest", file=sys.stdout)
         sys.stdout = saved_stdout
-        with open(tmp_stdout, "r") as stdout:
+        with open(tmp_stdout) as stdout:
             stream_lines = stdout.readlines()
         assert not stream_lines
 
-        with open(tmp_file, "r") as log_file:
+        with open(tmp_file) as log_file:
             log_lines = log_file.readlines()
         assert "stdout nosetest" in log_lines[-1]
 

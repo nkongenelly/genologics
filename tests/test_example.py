@@ -2,11 +2,11 @@ from sys import version_info
 from unittest import TestCase, main
 
 from genologics import test_utils
-from genologics.lims import Lims
 from genologics.entities import Project
+from genologics.lims import Lims
 
 if version_info[0] == 2:
-    from mock import patch
+    from unittest.mock import patch
 else:
     from unittest.mock import patch
 

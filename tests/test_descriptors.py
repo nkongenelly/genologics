@@ -4,20 +4,20 @@ from unittest import TestCase
 from xml.etree import ElementTree
 
 from genologics.descriptors import (
-    StringDescriptor,
-    StringAttributeDescriptor,
-    StringListDescriptor,
-    StringDictionaryDescriptor,
-    IntegerDescriptor,
     BooleanDescriptor,
-    UdfDictionary,
     EntityDescriptor,
+    IntegerDescriptor,
+    StringAttributeDescriptor,
+    StringDescriptor,
+    StringDictionaryDescriptor,
+    StringListDescriptor,
+    UdfDictionary,
 )
 from genologics.entities import Artifact
 from genologics.lims import Lims
 
 if version_info[0] == 2:
-    from mock import Mock
+    from unittest.mock import Mock
 else:
     from unittest.mock import Mock
 

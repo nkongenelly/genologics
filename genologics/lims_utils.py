@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
-from genologics.epp import EppLogger
 
-import logging
-import sys
-import os
 
+from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.lims import *
-from genologics.config import BASEURI, USERNAME, PASSWORD
 
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 

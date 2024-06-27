@@ -1,4 +1,3 @@
-import xml
 from unittest import TestCase
 
 from requests.exceptions import HTTPError
@@ -16,22 +15,23 @@ except NameError:  # callable() doesn't exist in Python 3.0 and 3.1
 from sys import version_info
 
 if version_info[0] == 2:
-    from mock import patch, Mock
+    from unittest.mock import Mock, patch
+
     import __builtin__ as builtins
 else:
-    from unittest.mock import patch, Mock
     import builtins
+    from unittest.mock import Mock, patch
 
 
 class TestLims(TestCase):
     url = "http://testgenologics.com:4040"
     username = "test"
     password = "password"
-    sample_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    sample_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <smp:samples xmlns:smp="http://genologics.com/ri/sample">
     <sample uri="{url}/api/v2/samples/test_sample" limsid="test_id"/>
 </smp:samples>
-""".format(url=url)
+"""
     error_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <exc:exception xmlns:exc="http://genologics.com/ri/exception">
     <message>Generic error message</message>
@@ -44,7 +44,7 @@ class TestLims(TestCase):
         lims = Lims(self.url, username=self.username, password=self.password)
         assert lims.get_uri(
             "artifacts", sample_name="test_sample"
-        ) == "{url}/api/v2/artifacts?sample_name=test_sample".format(url=self.url)
+        ) == f"{self.url}/api/v2/artifacts?sample_name=test_sample"
 
     def test_parse_response(self):
         lims = Lims(self.url, username=self.username, password=self.password)
@@ -66,7 +66,7 @@ class TestLims(TestCase):
     def test_get(self, mocked_instance):
         lims = Lims(self.url, username=self.username, password=self.password)
         r = lims.get(
-            "{url}/api/v2/artifacts?sample_name=test_sample".format(url=self.url)
+            f"{self.url}/api/v2/artifacts?sample_name=test_sample"
         )
         assert r is not None
         assert callable(r.find)
@@ -82,7 +82,7 @@ class TestLims(TestCase):
 
     def test_put(self):
         lims = Lims(self.url, username=self.username, password=self.password)
-        uri = "{url}/api/v2/samples/test_sample".format(url=self.url)
+        uri = f"{self.url}/api/v2/samples/test_sample"
         with patch(
             "requests.put", return_value=Mock(content=self.sample_xml, status_code=200)
         ) as mocked_put:
@@ -96,7 +96,7 @@ class TestLims(TestCase):
 
     def test_post(self):
         lims = Lims(self.url, username=self.username, password=self.password)
-        uri = "{url}/api/v2/samples".format(url=self.url)
+        uri = f"{self.url}/api/v2/samples"
         with patch(
             "requests.post", return_value=Mock(content=self.sample_xml, status_code=200)
         ) as mocked_put:

@@ -13,12 +13,13 @@ bash -c "PATH/TO/INSTALLED/SCRIPT
 Johannes Alneberg, Science for Life Laboratory, Stockholm, Sweden.
 """
 
-from argparse import ArgumentParser
-from genologics.lims import Lims
-from genologics.entities import Process
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.epp import EppLogger, attach_file
 import sys
+from argparse import ArgumentParser
+
+from genologics.config import BASEURI, PASSWORD, USERNAME
+from genologics.entities import Process
+from genologics.epp import EppLogger, attach_file
+from genologics.lims import Lims
 
 
 def main(lims, pid, file):

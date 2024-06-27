@@ -1,28 +1,27 @@
-import operator
 from sys import version_info
 from unittest import TestCase
 from xml.etree import ElementTree
 
 from genologics.entities import (
-    StepActions,
-    Researcher,
     Artifact,
-    Step,
-    StepPlacements,
-    StepPools,
     Container,
-    Stage,
+    Project,
     ReagentKit,
     ReagentLot,
+    Researcher,
     Sample,
-    Project,
+    Stage,
+    Step,
+    StepActions,
+    StepPlacements,
+    StepPools,
 )
 from genologics.lims import Lims
 
 if version_info[0] == 2:
-    from mock import patch, Mock
+    from unittest.mock import Mock, patch
 else:
-    from unittest.mock import patch, Mock
+    from unittest.mock import Mock, patch
 
 url = "http://testgenologics.com:4040"
 

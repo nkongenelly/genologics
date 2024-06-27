@@ -8,44 +8,43 @@ Copyright (C) 2012 Per Kraulis
 
 from genologics.constants import nsmap
 from genologics.descriptors import (
-    StringDescriptor,
-    StringDictionaryDescriptor,
-    UdfDictionaryDescriptor,
-    UdtDictionaryDescriptor,
-    ExternalidListDescriptor,
-    EntityDescriptor,
     BooleanDescriptor,
-    EntityListDescriptor,
-    StringAttributeDescriptor,
-    StringListDescriptor,
     DimensionDescriptor,
-    IntegerDescriptor,
-    PlacementDictionaryDescriptor,
+    EntityDescriptor,
+    EntityListDescriptor,
+    ExternalidListDescriptor,
     InputOutputMapList,
-    LocationDescriptor,
-    ReagentLabelList,
-    NestedEntityListDescriptor,
-    NestedStringListDescriptor,
-    NestedAttributeListDescriptor,
     IntegerAttributeDescriptor,
-    NestedStringDescriptor,
-    NestedBooleanDescriptor,
+    IntegerDescriptor,
+    LocationDescriptor,
     MultiPageNestedEntityListDescriptor,
+    NamedStringDescriptor,
+    NestedAttributeListDescriptor,
+    NestedBooleanDescriptor,
+    NestedEntityListDescriptor,
+    NestedStringDescriptor,
+    NestedStringListDescriptor,
+    OutputReagentList,
+    PlacementDictionaryDescriptor,
     ProcessTypeParametersDescriptor,
     ProcessTypeProcessInputDescriptor,
     ProcessTypeProcessOutputDescriptor,
-    NamedStringDescriptor,
-    OutputReagentList,
+    ReagentLabelList,
+    StringAttributeDescriptor,
+    StringDescriptor,
+    StringDictionaryDescriptor,
+    StringListDescriptor,
+    UdfDictionaryDescriptor,
+    UdtDictionaryDescriptor,
 )
 
 try:
-    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+    from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
 except ImportError:
-    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
-
-from xml.etree import ElementTree
+    from urlparse import parse_qs, urlparse, urlsplit, urlunparse
 
 import logging
+from xml.etree import ElementTree
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +83,8 @@ class SampleHistory:
 
     def control(self):
         """this can be used to check the content of the object."""
-        logger.info("SAMPLE NAME: {}".format(self.sample_name))
-        logger.info("outart : {}".format(self.history_list[0]))
+        logger.info(f"SAMPLE NAME: {self.sample_name}")
+        logger.info(f"outart : {self.history_list[0]}")
         # logger.info ("\nmap :")
         # for key, value in self.art_map.iteritems():
         #    logger.info(value[1]+"->"+value[0].id+"->"+key)
@@ -94,7 +93,7 @@ class SampleHistory:
         for key, dict in self.history.items():
             logger.info(key)
             for key2, dict2 in dict.items():
-                logger.info("\t{}".format(key2))
+                logger.info(f"\t{key2}")
                 for key, value in dict2.items():
                     logger.info(
                         "\t\t{0}->{1}".format(
@@ -298,7 +297,7 @@ class SampleHistory:
         return history, input_art
 
 
-class Entity(object):
+class Entity:
     "Base class for the entities in the LIMS database."
 
     _TAG = None
@@ -873,7 +872,7 @@ class StepPools(Entity):
             del self._available_inputs[input_art]
         else:
             logger.info(
-                "using more inputs than replicates for input {0}".format(input_art.uri)
+                f"using more inputs than replicates for input {input_art.uri}"
             )
         self.available_inputs = self._available_inputs
 
@@ -910,7 +909,7 @@ class StepPools(Entity):
             for idx, pool_node in enumerate(
                 self.root.find("pooled-inputs").findall("pool")
             ):
-                pool_name = pool_node.attrib.get("name", "Pool #{0}".format(idx + 1))
+                pool_name = pool_node.attrib.get("name", f"Pool #{idx + 1}")
                 pool_object = {"name": pool_name, "inputs": [], "output": None}
                 if pool_node.attrib.get("output-uri", False):
                     pool_object["output"] = Artifact(
@@ -932,7 +931,7 @@ class StepPools(Entity):
             if pool_obj.get("output", False):
                 current_pool.attrib["output-uri"] = pool_obj["output"].uri
             current_pool.attrib["name"] = pool_obj.get(
-                "name", "Pool #{0}".format(idx + 1)
+                "name", f"Pool #{idx + 1}"
             )
             for input_art in pool_obj.get("inputs", []):
                 current_input = ElementTree.SubElement(current_pool, "input")
@@ -1176,7 +1175,7 @@ class Step(Entity):
     def advance(self):
         self.get()
         self.root = self.lims.post(
-            uri="{0}/advance".format(self.uri),
+            uri=f"{self.uri}/advance",
             data=self.lims.tostring(ElementTree.ElementTree(self.root)),
         )
 
