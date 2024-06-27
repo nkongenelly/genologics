@@ -269,13 +269,13 @@ class Lims:
         )
         return self._get_instances(Udfconfig, add_info=add_info, params=params)
 
-    def get_reagent_types(self, name=None, start_index=None):
+    def get_reagent_types(self, name=None, start_index=None, add_info=False):
         """Get a list of reqgent types, filtered by keyword arguments.
         name: reagent type  name, or list of names.
         start_index: Page to retrieve; all if None.
         """
         params = self._get_params(name=name, start_index=start_index)
-        return self._get_instances(ReagentType, params=params)
+        return self._get_instances(ReagentType, add_info=add_info, params=params)
 
     def get_labs(
         self,
@@ -575,10 +575,6 @@ class Lims:
         """Get a list of process types with the specified name."""
         params = self._get_params(displayname=displayname)
         return self._get_instances(Processtype, add_info=add_info, params=params)
-
-    def get_reagent_types(self, name=None, add_info=False):
-        params = self._get_params(name=name)
-        return self._get_instances(ReagentType, add_info=add_info, params=params)
 
     def get_protocols(self, name=None, add_info=False):
         """Get the list of existing protocols on the system"""
