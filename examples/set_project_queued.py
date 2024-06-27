@@ -19,12 +19,12 @@ lims = Lims(BASEURI, USERNAME, PASSWORD)
 lims.check_version()
 
 # Get the project with the LIMS id KLL60, and print some info.
-project = Project(lims, id='KLL60')
+project = Project(lims, id="KLL60")
 print(project, project.name, project.open_date)
 print(list(project.udf.items()))
 
-d = datetime.date(2012,1,2)
+d = datetime.date(2012, 1, 2)
 print(d)
 
-project.udf['Queued'] = d
+project.udf["Queued"] = d
 project.put()
