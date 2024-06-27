@@ -168,11 +168,6 @@ generic_sample_creation_xml = """
 """
 
 
-class TestEntities(TestCase):
-    def test_pass(self):
-        pass
-
-
 def elements_equal(e1, e2):
     if e1.tag != e2.tag:
         print(f"Tag: {e1.tag} != {e2.tag}")
@@ -345,9 +340,7 @@ class TestStepPlacements(TestEntities):
         c1 = Container(
             uri="http://testgenologics.com:4040/containers/c1", lims=self.lims
         )
-        Container(
-            uri="http://testgenologics.com:4040/containers/c2", lims=self.lims
-        )
+        Container(uri="http://testgenologics.com:4040/containers/c2", lims=self.lims)
 
         s = StepPlacements(
             uri=self.lims.get_uri("steps", "s1", "placements"), lims=self.lims
