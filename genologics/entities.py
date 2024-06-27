@@ -276,7 +276,7 @@ class SampleHistory:
         for process in (
             self.processes_per_artifact[input_art]
             if self.processes_per_artifact
-            else lims.get_processes(inputartifactlimsid=input_art)
+            else self.lims.get_processes(inputartifactlimsid=input_art)
         ):
             # outputs = map(lambda a: (a.id), process.all_outputs())
             outputs = [a.id for a in process.all_outputs()]
@@ -869,9 +869,7 @@ class StepPools(Entity):
         elif rep == 1:
             del self._available_inputs[input_art]
         else:
-            logger.info(
-                f"using more inputs than replicates for input {input_art.uri}"
-            )
+            logger.info(f"using more inputs than replicates for input {input_art.uri}")
         self.available_inputs = self._available_inputs
 
     def set_available_inputs(self, available_inputs):
@@ -928,9 +926,7 @@ class StepPools(Entity):
             current_pool = ElementTree.SubElement(pool_root, "pool")
             if pool_obj.get("output", False):
                 current_pool.attrib["output-uri"] = pool_obj["output"].uri
-            current_pool.attrib["name"] = pool_obj.get(
-                "name", f"Pool #{idx + 1}"
-            )
+            current_pool.attrib["name"] = pool_obj.get("name", f"Pool #{idx + 1}")
             for input_art in pool_obj.get("inputs", []):
                 current_input = ElementTree.SubElement(current_pool, "input")
                 current_input.attrib["uri"] = input_art.uri
@@ -1197,9 +1193,7 @@ class Step(Entity):
         elif not all([isinstance(input, Artifact) for input in inputs]):
             raise TypeError(f"{inputs} does not contain only items of type Artifact")
 
-        instance = super()._create(
-            lims, creation_tag="step-creation", **kwargs
-        )
+        instance = super()._create(lims, creation_tag="step-creation", **kwargs)
 
         # Setup configuration element
         configuration_element = ElementTree.SubElement(instance.root, "configuration")
