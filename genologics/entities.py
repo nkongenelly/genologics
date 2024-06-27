@@ -41,7 +41,7 @@ from genologics.descriptors import (
 try:
     from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
 except ImportError:
-    from urlparse import parse_qs, urlparse, urlsplit, urlunparse
+    from urlparse import parse_qs, urlparse, urlsplit, urlunparse  # type: ignore
 
 import logging
 from xml.etree import ElementTree
@@ -299,9 +299,9 @@ class SampleHistory:
 class Entity:
     "Base class for the entities in the LIMS database."
 
-    _TAG = None
-    _URI = None
-    _PREFIX = None
+    _TAG: str | None = None
+    _URI: str | None = None
+    _PREFIX: str | None = None
 
     def __new__(cls, lims, uri=None, id=None, _create_new=False):
         if not uri:
@@ -828,8 +828,8 @@ class Artifact(Entity):
             return self
 
     # XXX set_state ?
-    state = property(get_state)
-    stateless = property(stateless)
+    state = property(get_state)  # type: ignore
+    stateless = property(stateless)  # type: ignore
 
     def _get_workflow_stages_and_statuses(self):
         self.get()
@@ -1320,12 +1320,17 @@ class Queue(Entity):
     artifacts = MultiPageNestedEntityListDescriptor("artifact", Artifact, "artifacts")
 
 
-Sample.artifact = EntityDescriptor("artifact", Artifact)
-StepActions.step = EntityDescriptor("step", Step)
-Stage.workflow = EntityDescriptor("workflow", Workflow)
-Artifact.workflow_stages = NestedEntityListDescriptor(
-    "workflow-stage", Stage, "workflow-stages"
+# Set class-interdependent class variables
+setattr(Sample, "artifact", EntityDescriptor("artifact", Artifact))
+setattr(StepActions, "step", EntityDescriptor("step", Step))
+setattr(Stage, "workflow", EntityDescriptor("workflow", Workflow))
+setattr(
+    Artifact,
+    "workflow_stages",
+    NestedEntityListDescriptor("workflow-stage", Stage, "workflow-stages"),
 )
-Step.configuration = EntityDescriptor("configuration", ProtocolStep)
-StepProgramStatus.configuration = EntityDescriptor("configuration", ProtocolStep)
-Researcher.roles = NestedEntityListDescriptor("role", Role, "credentials")
+setattr(Step, "configuration", EntityDescriptor("configuration", ProtocolStep))
+setattr(
+    StepProgramStatus, "configuration", EntityDescriptor("configuration", ProtocolStep)
+)
+setattr(Researcher, "roles", NestedEntityListDescriptor("role", Role, "credentials"))
