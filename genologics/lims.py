@@ -29,7 +29,28 @@ from xml.etree import ElementTree
 
 import requests
 
-from .entities import *
+from genologics.constants import nsmap
+
+from .entities import (
+    Artifact,
+    Automation,
+    Container,
+    Containertype,
+    File,
+    Instrument,
+    Lab,
+    Process,
+    Processtype,
+    Project,
+    Protocol,
+    ReagentKit,
+    ReagentLot,
+    ReagentType,
+    Researcher,
+    Sample,
+    Udfconfig,
+    Workflow,
+)
 
 # Python 2.6 support work-arounds
 # - Exception ElementTree.ParseError does not exist
@@ -234,7 +255,7 @@ class Lims:
     ):
         """Get a list of udfs, filtered by keyword arguments.
         name: name of udf
-        attach_to_name: item in the system, to wich the udf is attached, such as
+        attach_to_name: item in the system, to which the udf is attached, such as
             Sample, Project, Container, or the name of a process.
         attach_to_category: If 'attach_to_name' is the name of a process, such as 'CaliperGX QC (DNA)',
              then you need to set attach_to_category='ProcessType'. Must not be provided otherwise.
