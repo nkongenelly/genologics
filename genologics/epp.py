@@ -1,4 +1,3 @@
-
 """Contains useful and reusable code for EPP scripts.
 
 Classes, methods and exceptions.
@@ -90,9 +89,7 @@ class EppLogger:
             )
         except DistributionNotFound as e:
             logging.error(e)
-            logging.error(
-                f"Make sure you have the {self.PACKAGE} " "package installed"
-            )
+            logging.error(f"Make sure you have the {self.PACKAGE} " "package installed")
             sys.exit(-1)
         return self
 
@@ -292,7 +289,7 @@ class ReadResultFiles:
         error_message = ""
         duplicated_lines = []
         exeptions = ["Sample", "Fail", ""]
-        if type(first_header) is not list:
+        if not isinstance(first_header, list):
             if first_header:
                 first_header = [first_header]
             else:
@@ -403,7 +400,8 @@ class CopyField:
             )
 
         logging.info(
-            f"Copying from element with id: {self.s_elt.id} to element with " f" id: {self.d_elt.id}"
+            f"Copying from element with id: {self.s_elt.id} to element with "
+            f" id: {self.d_elt.id}"
         )
 
     def _log_after_change(self):
