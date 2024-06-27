@@ -5,3 +5,6 @@ pytest
 requests
 ruff
 six
+types-requests
+types-setuptools
+types-six
