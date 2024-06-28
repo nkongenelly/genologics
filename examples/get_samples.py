@@ -56,5 +56,5 @@ print(submitter, submitter.email, submitter.initials, submitter.lab)
 
 print()
 # Print the artifact of the sample.
-artifact = sample.artifact
+artifact = sample.artifact  # type: ignore
 print(artifact, artifact.state, artifact.type, artifact.qc_flag)
