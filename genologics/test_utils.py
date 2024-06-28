@@ -16,7 +16,7 @@ In order to use the patched get :
 """
 
 
-XML_DICT = {}
+XML_DICT: None | dict = {}
 
 
 def patched_get(*args, **kwargs):
