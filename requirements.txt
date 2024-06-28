@@ -1,11 +1,3 @@
-mock
-mypy
-pipreqs
-pytest
 requests
-ruff
+setuptools
 six
-sphinxcontrib-programoutput
-types-requests
-types-setuptools
-types-six

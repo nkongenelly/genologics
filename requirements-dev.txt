@@ -1,0 +1,9 @@
+mock
+mypy
+pipreqs
+pytest
+ruff
+sphinxcontrib-programoutput
+types-requests
+types-setuptools
+types-six
