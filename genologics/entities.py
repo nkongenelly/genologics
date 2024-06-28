@@ -6,6 +6,10 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
 
+import logging
+from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
+from xml.etree import ElementTree
+
 from genologics.constants import nsmap
 from genologics.descriptors import (
     BooleanDescriptor,
@@ -37,14 +41,6 @@ from genologics.descriptors import (
     UdfDictionaryDescriptor,
     UdtDictionaryDescriptor,
 )
-
-try:
-    from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
-except ImportError:
-    from urlparse import parse_qs, urlparse, urlsplit, urlunparse  # type: ignore
-
-import logging
-from xml.etree import ElementTree
 
 logger = logging.getLogger(__name__)
 

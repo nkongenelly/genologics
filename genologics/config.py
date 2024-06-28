@@ -1,25 +1,20 @@
 import os
-
-try:
-    from ConfigParser import SafeConfigParser
-except ImportError:
-    from configparser import SafeConfigParser
-
+from configparser import ConfigParser
 
 """
 Usage:
 from genologics.config import BASEURI, USERNAME, PASSWORD
 
-Alternate Usage: 
+Alternate Usage:
 from genologics import config
-BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = config.load_config(specified_config = <path to config file>) 
+BASEURI, USERNAME, PASSWORD, VERSION, MAIN_LOG = config.load_config(specified_config = <path to config file>)
 """
 
 spec_config = None
 
 
 def get_config_info(config_file):
-    config = SafeConfigParser()
+    config = ConfigParser()
     config.readfp(open(config_file))
 
     BASEURI = config.get("genologics", "BASEURI").rstrip()
@@ -42,7 +37,7 @@ def load_config(specified_config=None):
     if specified_config is not None:
         config_file = specified_config
     else:
-        config = SafeConfigParser()
+        config = ConfigParser()
         try:
             conf_file = config.read(
                 [

@@ -43,6 +43,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=["requests"],
+    python_requires="3.12",
     entry_points="""
       # -*- Entry points: -*-
       """,
