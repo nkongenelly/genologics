@@ -15,7 +15,7 @@ spec_config = None
 
 def get_config_info(config_file):
     config = ConfigParser()
-    config.readfp(open(config_file))
+    config.read_file(open(config_file))
 
     BASEURI = config.get("genologics", "BASEURI").rstrip()
     USERNAME = config.get("genologics", "USERNAME").rstrip()
