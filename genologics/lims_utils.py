@@ -18,7 +18,7 @@ def get_run_info(fc):
 
 
 def procHistory(proc, samplename):
-    """Quick wat to get the ids of parent processes from the given process,
+    """Quick way to get the ids of parent processes from the given process,
     while staying in a sample scope"""
     hist = []
     artifacts = lims.get_artifacts(sample_name=samplename, type="Analyte")
