@@ -86,7 +86,7 @@ generic_step_placements_xml = """<?xml version='1.0' encoding='utf-8'?>
 
 generic_reagentkit_xml = """<?xml version='1.0' encoding='utf-8'?>
 <kit:reagent-kit xmlns:kit="http://genologics.com/ri/reagentkit" uri="{url}:8080/api/v2/reagentkits/r1">
-<name>regaentkitname</name>
+<name>reagentkitname</name>
 <supplier>reagentProvider</supplier>
 <website>www.reagentprovider.com</website>
 <archived>false</archived>
@@ -426,7 +426,7 @@ class TestReagentKits(TestEntities):
             "requests.Session.get",
             return_value=Mock(content=self.reagentkit_xml, status_code=200),
         ):
-            assert r.name == "regaentkitname"
+            assert r.name == "reagentkitname"
             assert r.supplier == "reagentProvider"
             assert r.website == "www.reagentprovider.com"
             assert r.archived is False
@@ -438,7 +438,7 @@ class TestReagentKits(TestEntities):
         ):
             ReagentKit.create(
                 self.lims,
-                name="regaentkitname",
+                name="reagentkitname",
                 supplier="reagentProvider",
                 website="www.reagentprovider.com",
                 archived=False,
