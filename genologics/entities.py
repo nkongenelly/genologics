@@ -299,7 +299,7 @@ class Entity:
     _URI: str | None = None
     _PREFIX: str | None = None
 
-    def __new__(cls, lims, uri=None, id=None, _create_new=False):
+    def __new__(cls, lims, uri=None, id=None, _create_new=False, extra=None):
         if not uri:
             if id:
                 uri = lims.get_uri(cls._URI, id)
@@ -313,7 +313,7 @@ class Entity:
         except KeyError:
             return object.__new__(cls)
 
-    def __init__(self, lims, uri=None, id=None, _create_new=False):
+    def __init__(self, lims, uri=None, id=None, _create_new=False, extra=None):
         assert uri or id or _create_new
         if not _create_new:
             if hasattr(self, "lims"):
@@ -325,6 +325,7 @@ class Entity:
         self.lims = lims
         self._uri = uri
         self.root = None
+        self.extra = extra
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.id})"
@@ -353,8 +354,14 @@ class Entity:
 
     def put(self):
         "Save this instance by doing PUT of its serialized XML."
+        # if hasattr(self, "root") and self.root is not None:
         data = self.lims.tostring(ElementTree.ElementTree(self.root))
         self.lims.put(self.uri, data)
+        # else:
+        #     a = hasattr(self, "root")
+        #     b = self.root
+        #     print(f"......self.root....{self.__dir__}")
+        #     print("")
 
     def post(self):
         "Save this instance with POST"
@@ -428,7 +435,6 @@ class Lab(Entity):
     externalids = ExternalidListDescriptor()
     website = StringDescriptor("website")
 
-
 class Researcher(Entity):
     "Person; client scientist or lab personnel. Associated with a lab."
 
@@ -470,6 +476,19 @@ class Role(Entity):
     researchers = NestedEntityListDescriptor("researcher", Researcher, "researchers")
     permissions = NestedEntityListDescriptor("permission", Permission, "permissions")
 
+class Permission(Entity):
+    """A Clarity permission. Only supports GET"""
+    name = StringDescriptor('name')
+    action = StringDescriptor('action')
+    description = StringDescriptor('description')
+
+
+class Role(Entity):
+    """Clarity Role, hosting permissions"""
+    name = StringDescriptor('name')
+    researchers = NestedEntityListDescriptor('researcher', Researcher, 'researchers')
+    permissions = NestedEntityListDescriptor('permission', Permission, 'permissions')
+
 
 class Reagent_label(Entity):
     """Reagent label element"""
@@ -490,6 +509,16 @@ class File(Entity):
     content_location = StringDescriptor("content-location")
     original_location = StringDescriptor("original-location")
     is_published = BooleanDescriptor("is-published")
+
+
+class Instrument(Entity):
+    "Instrument"
+    _URI = 'instruments'
+    _PREFIX = 'inst'
+    name = StringDescriptor('name')
+    type = StringDescriptor('type')
+    serial_number = StringDescriptor('serial-number')
+    archived = BooleanDescriptor('archived')
 
 
 class Project(Entity):
@@ -549,6 +578,66 @@ class Sample(Entity):
         data = lims.tostring(ElementTree.ElementTree(instance.root))
         instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
         instance._uri = instance.root.attrib["uri"]
+        return instance
+
+
+    @classmethod
+    def create(cls, lims, container, position, **kwargs):
+        """Create an instance of Sample from attributes then post it to the LIMS
+
+        Udfs can be sent in with the kwarg `udfs`. It should be a dictionary-like.
+        """
+        instance = cls.create_in_memory_instance(lims, container, position, **kwargs)
+        data = lims.tostring(ElementTree.ElementTree(instance.root))
+        instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
+        instance._uri = instance.root.attrib['uri']
+        return instance
+
+    @classmethod
+    def batch_create(cls, lims, in_memory_instances):
+        """
+        Batch creates the samples. The list in_memory_instances is created by calls to
+        `Sample.create_in_memory_instance`
+        """
+        # Create a batch request from all in_memory_instances:
+        batch = ElementTree.Element(nsmap(cls._PREFIX + ':details'))
+
+        for instance in in_memory_instances:
+            element = copy.deepcopy(instance.root)
+            batch.append(element)
+
+        data = lims.tostring(ElementTree.ElementTree(batch))
+        response = lims.post(uri=lims.get_uri('samples/batch/create'), data=data)
+
+        ret = list()
+        for entry in response:
+            uri = entry.attrib['uri']
+            ret.append(Sample(lims=lims, uri=uri))
+        return ret
+
+    @classmethod
+    def create_in_memory_instance(cls, lims, container, position, **kwargs):
+        """
+        Creates a request for creating a single sample object
+        """
+        udfs = kwargs.pop("udfs", dict())
+        if not isinstance(container, Container):
+            raise TypeError('%s is not of type Container' % container)
+        instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
+        location = ElementTree.SubElement(instance.root, 'location')
+        ElementTree.SubElement(location, 'container', dict(uri=container.uri))
+        position_element = ElementTree.SubElement(location, 'value')
+        position_element.text = position
+
+        # NOTE: This is a quick fix. I assume that it must be possible to initialize samples
+        # with UDFs
+        for key, value in list(udfs.items()):
+            attrib = {
+                "name": key,
+                "xmlns:udf": "http://genologics.com/ri/userdefined",
+            }
+            udf = ElementTree.SubElement(instance.root, 'udf:field', attrib=attrib)
+            udf.text = value
         return instance
 
 
@@ -640,6 +729,35 @@ class ControlType(Entity):
     supplier = StringDescriptor("supplier")
     archived = BooleanDescriptor("archived")
     single_step = BooleanDescriptor("single_step")
+
+class Processtype(Entity):
+    _TAG = 'process-type'
+    _URI = 'processtypes'
+    _PREFIX = 'ptp'
+
+    def __init__(self, lims, uri=None, id=None, _create_new=False):
+        super(Processtype, self).__init__(lims, uri, id, _create_new)
+        self.parameters = ProcessTypeParametersDescriptor(self)
+
+    name = StringAttributeDescriptor('name')
+    field_definition = EntityListDescriptor('field-definition', Udfconfig)
+    process_inputs = ProcessTypeProcessInputDescriptor()
+    process_outputs = ProcessTypeProcessOutputDescriptor()
+    process_type_attribute = NamedStringDescriptor('process-type-attribute')
+
+    @property
+    def process_input(self):
+        return self.process_inputs[0]
+
+class ControlType(Entity):
+    _URI = "controltypes"
+    _TAG = "control-type"
+    _PREFIX = 'ctrltp'
+
+    name = StringAttributeDescriptor('name')
+    supplier = StringDescriptor('supplier')
+    archived = BooleanDescriptor('archived')
+    single_step = BooleanDescriptor('single_step')
 
 
 class Process(Entity):
@@ -1144,6 +1262,20 @@ class StepReagents(Entity):
     reagent_category = StringDescriptor("reagent-category")
     output_reagents = OutputReagentList(Artifact)
 
+class StepDetails(Entity):
+    """Detail associated with a step"""
+
+    input_output_maps = InputOutputMapList('input-output-maps')
+    udf = UdfDictionaryDescriptor('fields')
+    udt = UdtDictionaryDescriptor('fields')
+
+class StepReagents(Entity):
+
+    reagent_category = StringDescriptor('reagent-category')
+    output_reagents = OutputReagentList(Artifact)
+
+
+
 
 class Step(Entity):
     "Step, as defined by the genologics API."
@@ -1261,6 +1393,19 @@ class Automation(Entity):
     string = NestedStringDescriptor("string")
     name = StringAttributeDescriptor("name")
     context = NestedStringDescriptor("context")
+
+
+
+class Automation(Entity):
+    """Automation, holding Automation configurations"""
+    _URI = 'configuration/automations'
+    _TAG = 'automation'
+
+    process_types   = NestedEntityListDescriptor('process-type', Processtype, 'process-types')
+    string          = NestedStringDescriptor('string')
+    name            = StringAttributeDescriptor('name')
+    context         = NestedStringDescriptor('context')
+
 
 
 class Stage(Entity):
