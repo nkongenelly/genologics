@@ -2,21 +2,20 @@
 
 [![PyPI version](https://badge.fury.io/py/genologics.svg)](http://badge.fury.io/py/genologics)
 
-A basic module for interacting with the GenoLogics LIMS server via
+A basic module for interacting with the Illumina Basespace Clarity LIMS server via
 its REST API. The goal is to provide simple access to the most common
 entities and their attributes in a reasonably Pythonic fashion.
 
-Supported python versions :
+### Compatibility
 
-2.6
-2.7 (recommended)
-3.4
-3.5
+From version **1.0.0** the scripts have been ported to support **Python 3**,
+and it is backwards compatible with **Python 2** as well. The previous versions
+(**<0.4.6**) are only compatible with **Python 2**.
 
 ### Design
 
 All instances of Project, Sample, Artifact, etc should be obtained using
-the get_* methods of the Lims class, which keeps an internal cache of
+the get\_\* methods of the Lims class, which keeps an internal cache of
 current instances. The idea is to create one and only one instance in
 a running script for representing an item in the database. If one has
 more than one instance representing the same item, there is a danger that
@@ -39,6 +38,12 @@ or for the cutting edge version:
 
 ```
 pip install https://github.com/SciLifeLab/genologics/tarball/master
+```
+
+For installing an older version:
+
+```
+pip install "genologics==0.4.*"
 ```
 
 ### Usage
@@ -73,16 +78,21 @@ NOTE: The example files rely on specific entities and configurations
 on the server, and use base URI, user name and password, so to work
 for your server, all these must be reviewed and modified.
 
-
 ### EPPs
 
 The EPPs in use at Scilifelab can be found in the subdirectory 'scripts' of the repository [scilifelab_epps](https://github.com/SciLifeLab/scilifelab_epps/).
 
+### Tests
+
+The [limsmock](https://github.com/Clinical-Genomics/limsmock) serves as a LIMS REST API mock for testing purposes. It can be used for building tests for the genologicas package or other packages querying the clarity lims rest api.
+
+Some examples of how it can be used can be fount in [tests directory](https://github.com/Clinical-Genomics/limsmock/tree/master/tests).
+
 ### Pull requests policy
 
-Pull requests are welcome, and will be tested internally before merging. Be aware that this process might take a fair amount of time. 
+Pull requests are welcome, and will be tested internally before merging. Be aware that this process might take a fair amount of time.
 
-### Known bugs 
+### Known bugs
 
 - Artifact state is part of its URL (as a query parameter).
   It is not entirely clear how to deal with this in the Lims.cache:
