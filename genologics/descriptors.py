@@ -70,6 +70,13 @@ class StringAttributeDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
+        # Skip loading the instance if we have information in the extra dictionary. This
+        # allows faster loading when the data is available in an overview page. An example is
+        # that names of Stages and Protocols is available in the details page for Workflows.
+
+        # If we have loaded the details for this entity (instance.root is not None), we always use that.
+        if instance.extra is not None and instance.root is None and self.tag in instance.extra:
+            return instance.extra[self.tag]
         instance.get()
         return instance.root.attrib[self.tag]
 
@@ -224,6 +231,7 @@ class UdfDictionary:
 
     def __setitem__(self, key, value):
         self._lookup[key] = value
+        key_found_in_xml = False
         for node in self._elems:
             if node.attrib["name"] != key:
                 continue
@@ -264,7 +272,8 @@ class UdfDictionary:
                     value = str(value).encode("UTF-8")
             node.text = value
             break
-        else:  # Create new entry; heuristics for type
+
+        if not key_found_in_xml: # Create new entry; heuristics for type
             if self._is_string(value):
                 vtype = "\n" in value and "Text" or "String"
             elif isinstance(value, bool):
@@ -314,6 +323,9 @@ class UdfDictionary:
 
     def __iter__(self):
         return self
+
+    def __next__(self):
+        return self.__next__()
 
     def __next__(self):
         try:
@@ -430,6 +442,45 @@ class EntityListDescriptor(EntityDescriptor):
 
         return result
 
+class NestedBooleanDescriptor(TagDescriptor):
+    def __init__(self, tag, *args):
+        super(NestedBooleanDescriptor, self).__init__(tag)
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = None
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        result = rootnode.find(self.tag).text.lower() == 'true'
+        return result
+
+    def __set__(self, instance, value):
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        rootnode.find(self.tag).text = str(value).lower()
+
+class NestedStringDescriptor(TagDescriptor):
+    def __init__(self, tag, *args):
+        super(NestedStringDescriptor, self).__init__(tag)
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = None
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        result = rootnode.find(self.tag).text
+        return result
+
+    def __set__(self, instance, value):
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        rootnode.find(self.tag).text = value
 
 class NestedBooleanDescriptor(TagDescriptor):
     def __init__(self, tag, *args):
@@ -516,6 +567,30 @@ class NestedStringListDescriptor(StringListDescriptor):
 class NestedEntityListDescriptor(EntityListDescriptor):
     """same as EntityListDescriptor, but works on nested elements"""
 
+    def __init__(self, tag, klass, rootkey=None, extra=[]):
+        super(EntityListDescriptor, self).__init__(tag, klass)
+        self.klass = klass
+        self.tag = tag
+        self.rootkey = rootkey
+        self.extra_meta = extra
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode = instance.root
+        if self.rootkey:
+            rootnode = rootnode.find(self.rootkey)
+        for node in rootnode.findall(self.tag):
+            # NOTE: The name should correspond to the name on the object, not necessarily the same
+            # as the name of the attribute.
+            extra = {extra_name: node.attrib[extra_name] for extra_name in self.extra_meta}
+            result.append(self.klass(instance.lims, uri=node.attrib['uri'], extra=extra))
+        return result
+
+
+class MultiPageNestedEntityListDescriptor(EntityListDescriptor):
+    """same as NestedEntityListDescriptor, but works on multiple pages, for Queues"""
+
     def __init__(self, tag, klass, *args):
         super(EntityListDescriptor, self).__init__(tag, klass)
         self.klass = klass
@@ -558,6 +633,7 @@ class MultiPageNestedEntityListDescriptor(EntityListDescriptor):
             )
             result.extend(next_queue_page.artifacts)
         return result
+
 
 
 class DimensionDescriptor(TagDescriptor):
@@ -603,6 +679,53 @@ class ReagentLabelList(BaseDescriptor):
             except:
                 pass
         return self.value
+
+    def __set__(self, instance, values):
+        instance.get()
+        nodes = instance.root.findall('reagent-label')
+        if not nodes:
+            root = instance.root
+            for value in values:
+                ElementTree.SubElement(root, 'reagent-label', name=value)
+
+        elif len(values) != len(nodes):
+            raise ValueError("Mismatching number of reagent labels")
+        else:
+            for node, value in zip(nodes, values):
+                node.attrib['name'] = value
+
+
+class OutputReagentList(BaseDescriptor):
+    """
+    Instance attribute depicting output reagents as :
+
+    {
+      output_artifact_1:[reagent_label_name_1, reagent_label_name_2,...]
+      output_artifact_2:[reagent_label_name_3, reagent_label_name_4,...]
+    }
+    """
+    def __init__(self, artifact_class):
+        self.klass = artifact_class
+
+    def __get__(self, instance, cls):
+        instance.get()
+        self.value = {}
+        for node in instance.root.iter('output'):
+            self.value[self.klass(instance.lims, uri=node.attrib['uri'])] = [subnode.attrib['name'] for subnode in node.findall('reagent-label')]
+
+        return self.value
+
+    def __set__(self, instance, value):
+        out_r = ElementTree.Element('output-reagents')
+        for artifact in value:
+            out_a = ElementTree.SubElement(out_r, 'output', attrib={'uri':artifact.uri})
+            for reagent_label_name in value[artifact]:
+                rea_l = ElementTree.SubElement(out_a, 'reagent-label', attrib={'name':reagent_label_name})
+
+        instance.root.remove(instance.root.find('output-reagents'))
+        instance.root.append(out_r)
+
+
 
 
 class OutputReagentList(BaseDescriptor):

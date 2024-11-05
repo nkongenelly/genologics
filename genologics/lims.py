@@ -680,7 +680,8 @@ class Lims:
         needs_request = False
         instance_map = {}
         for instance in instances:
-            instance_map[instance.id] = instance
+            instance_map[instance.uri] = instance
+
             if force or instance.root is None:
                 ElementTree.SubElement(
                     root, "link", dict(uri=instance.uri, rel=instance.__class__._URI)
