@@ -7,12 +7,10 @@ Copyright (C) 2012 Per Kraulis
 """
 
 from genologics.constants import nsmap
+from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
 
-try:
-    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
-except ImportError:
-    from urlparse import urlsplit, urlparse, parse_qs, urlunparse
 
+from decimal import Decimal
 import datetime
 import time
 from xml.etree import ElementTree
@@ -73,6 +71,13 @@ class StringAttributeDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
+        # Skip loading the instance if we have information in the extra dictionary. This
+        # allows faster loading when the data is available in an overview page. An example is
+        # that names of Stages and Protocols is available in the details page for Workflows.
+
+        # If we have loaded the details for this entity (instance.root is not None), we always use that.
+        if instance.extra is not None and instance.root is None and self.tag in instance.extra:
+            return instance.extra[self.tag]
         instance.get()
         return instance.root.attrib[self.tag]
 
@@ -149,16 +154,26 @@ class UdfDictionary(object):
 
     def _is_string(self, value):
         try:
-            return isinstance(value, basestring)
+            return isinstance(value, str)
         except:
             return isinstance(value, str)
 
-    def __init__(self, instance, udt=False):
+    def __init__(self, instance, *args, **kwargs):
         self.instance = instance
-        self._udt = udt
+        self._udt = kwargs.pop('udt', False)
+        self.rootkeys = args
+        self._rootnode = None
         self._update_elems()
         self._prepare_lookup()
         self.location = 0
+
+    @property
+    def rootnode(self):
+        if self._rootnode is None:
+            self._rootnode = self.instance.root
+            for rootkey in self.rootkeys:
+                self._rootnode = self._rootnode.find(rootkey)
+        return self._rootnode
 
     def get_udt(self):
         if self._udt == True:
@@ -171,7 +186,7 @@ class UdfDictionary(object):
         if not self._udt:
             raise AttributeError('cannot set name for a UDF dictionary')
         self._udt = name
-        elem = self.instance.root.find(nsmap('udf:type'))
+        elem = self.rootnode.find(nsmap('udf:type'))
         assert elem is not None
         elem.set('name', name)
 
@@ -180,13 +195,13 @@ class UdfDictionary(object):
     def _update_elems(self):
         self._elems = []
         if self._udt:
-            elem = self.instance.root.find(nsmap('udf:type'))
+            elem = self.rootnode.find(nsmap('udf:type'))
             if elem is not None:
                 self._udt = elem.attrib['name']
                 self._elems = elem.findall(nsmap('udf:field'))
         else:
             tag = nsmap('udf:field')
-            for elem in self.instance.root.getchildren():
+            for elem in list(self.rootnode):
                 if elem.tag == tag:
                     self._elems.append(elem)
 
@@ -220,12 +235,14 @@ class UdfDictionary(object):
 
     def __setitem__(self, key, value):
         self._lookup[key] = value
+        key_found_in_xml = False
         for node in self._elems:
             if node.attrib['name'] != key: continue
+            key_found_in_xml = True
             vtype = node.attrib['type'].lower()
 
             if value is None:
-                pass
+                value=''
             elif vtype == 'string':
                 if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
@@ -236,9 +253,10 @@ class UdfDictionary(object):
                 if not self._is_string(value):
                     raise TypeError('Text UDF requires str or unicode value')
             elif vtype == 'numeric':
-                if not isinstance(value, (int, float)):
+                if not isinstance(value, (int, float, Decimal)) and value != '':
                     raise TypeError('Numeric UDF requires int or float value')
-                value = str(value)
+                else:
+                    value = str(value)
             elif vtype == 'boolean':
                 if not isinstance(value, bool):
                     raise TypeError('Boolean UDF requires bool value')
@@ -253,18 +271,20 @@ class UdfDictionary(object):
                 value = str(value)
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
-            if not isinstance(value, str):
-                if not self._is_string(value):
-                    value = str(value).encode('UTF-8')
+            if value is None:
+                value = ''
+            elif not isinstance(value, str):
+                value = str(value).encode('UTF-8')
             node.text = value
             break
-        else:  # Create new entry; heuristics for type
+
+        if not key_found_in_xml: # Create new entry; heuristics for type
             if self._is_string(value):
                 vtype = '\n' in value and 'Text' or 'String'
             elif isinstance(value, bool):
                 vtype = 'Boolean'
                 value = value and 'true' or 'false'
-            elif isinstance(value, (int, float)):
+            elif isinstance(value, (int, float, Decimal)):
                 vtype = 'Numeric'
                 value = str(value)
             elif isinstance(value, datetime.date):
@@ -274,9 +294,9 @@ class UdfDictionary(object):
                 raise NotImplementedError("Cannot handle value of type '%s'"
                                           " for UDF" % type(value))
             if self._udt:
-                root = self.instance.root.find(nsmap('udf:type'))
+                root = self.rootnode.find(nsmap('udf:type'))
             else:
-                root = self.instance.root
+                root = self.rootnode
             elem = ElementTree.SubElement(root,
                                           nsmap('udf:field'),
                                           type=vtype,
@@ -295,7 +315,7 @@ class UdfDictionary(object):
         del self._lookup[key]
         for node in self._elems:
             if node.attrib['name'] == key:
-                self.instance.root.remove(node)
+                self.rootnode.remove(node)
                 break
 
     def items(self):
@@ -303,11 +323,14 @@ class UdfDictionary(object):
 
     def clear(self):
         for elem in self._elems:
-            self.instance.root.remove(elem)
+            self.rootnode.remove(elem)
         self._update_elems()
 
     def __iter__(self):
         return self
+
+    def __next__(self):
+        return self.__next__()
 
     def __next__(self):
         try:
@@ -327,10 +350,21 @@ class UdfDictionaryDescriptor(BaseDescriptor):
     """
     _UDT = False
 
+    def __init__(self, *args):
+        super(BaseDescriptor, self).__init__()
+        self.rootkeys = args
+
     def __get__(self, instance, cls):
         instance.get()
-        self.value = UdfDictionary(instance, udt=self._UDT)
+        self.value = UdfDictionary(instance, *self.rootkeys, udt=self._UDT)
         return self.value
+
+    def __set__(self, instance, dict_value):
+        instance.get()
+        udf_dict = UdfDictionary(instance, *self.rootkeys, udt=self._UDT)
+        udf_dict.clear()
+        for k in dict_value:
+            udf_dict[k] = dict_value[k]
 
 
 class UdtDictionaryDescriptor(UdfDictionaryDescriptor):
@@ -392,6 +426,8 @@ class EntityDescriptor(TagDescriptor):
             node = ElementTree.Element(self.tag)
             instance.root.append(node)
         node.attrib['uri'] = value.uri
+        if value._TAG in ['project', 'sample', 'artifact', 'container']:
+            node.attrib['limsid'] = value.id
 
 
 class EntityListDescriptor(EntityDescriptor):
@@ -407,6 +443,45 @@ class EntityListDescriptor(EntityDescriptor):
 
         return result
 
+class NestedBooleanDescriptor(TagDescriptor):
+    def __init__(self, tag, *args):
+        super(NestedBooleanDescriptor, self).__init__(tag)
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = None
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        result = rootnode.find(self.tag).text.lower() == 'true'
+        return result
+
+    def __set__(self, instance, value):
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        rootnode.find(self.tag).text = str(value).lower()
+
+class NestedStringDescriptor(TagDescriptor):
+    def __init__(self, tag, *args):
+        super(NestedStringDescriptor, self).__init__(tag)
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = None
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        result = rootnode.find(self.tag).text
+        return result
+
+    def __set__(self, instance, value):
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        rootnode.find(self.tag).text = value
 
 class NestedAttributeListDescriptor(StringAttributeDescriptor):
     """An instance yielding a list of dictionnaries of attributes
@@ -451,6 +526,30 @@ class NestedStringListDescriptor(StringListDescriptor):
 class NestedEntityListDescriptor(EntityListDescriptor):
     """same as EntityListDescriptor, but works on nested elements"""
 
+    def __init__(self, tag, klass, rootkey=None, extra=[]):
+        super(EntityListDescriptor, self).__init__(tag, klass)
+        self.klass = klass
+        self.tag = tag
+        self.rootkey = rootkey
+        self.extra_meta = extra
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode = instance.root
+        if self.rootkey:
+            rootnode = rootnode.find(self.rootkey)
+        for node in rootnode.findall(self.tag):
+            # NOTE: The name should correspond to the name on the object, not necessarily the same
+            # as the name of the attribute.
+            extra = {extra_name: node.attrib[extra_name] for extra_name in self.extra_meta}
+            result.append(self.klass(instance.lims, uri=node.attrib['uri'], extra=extra))
+        return result
+
+
+class MultiPageNestedEntityListDescriptor(EntityListDescriptor):
+    """same as NestedEntityListDescriptor, but works on multiple pages, for Queues"""
+
     def __init__(self, tag, klass, *args):
         super(EntityListDescriptor, self).__init__(tag, klass)
         self.klass = klass
@@ -465,7 +564,12 @@ class NestedEntityListDescriptor(EntityListDescriptor):
             rootnode = rootnode.find(rootkey)
         for node in rootnode.findall(self.tag):
             result.append(self.klass(instance.lims, uri=node.attrib['uri']))
+
+        if instance.root.find('next-page') is not None:
+            next_queue_page = instance.__class__(instance.lims, uri=instance.root.find('next-page').attrib.get('uri'))
+            result.extend(next_queue_page.artifacts)
         return result
+
 
 
 class DimensionDescriptor(TagDescriptor):
@@ -478,7 +582,8 @@ class DimensionDescriptor(TagDescriptor):
         node = instance.root.find(self.tag)
         return dict(is_alpha=node.find('is-alpha').text.lower() == 'true',
                     offset=int(node.find('offset').text),
-                    size=int(node.find('size').text))
+                    size=int(node.find('size').text)
+                    )
 
 
 class LocationDescriptor(TagDescriptor):
@@ -490,6 +595,8 @@ class LocationDescriptor(TagDescriptor):
         from genologics.entities import Container
         instance.get()
         node = instance.root.find(self.tag)
+        if node is None:
+            return (None,None)
         uri = node.find('container').attrib['uri']
         return Container(instance.lims, uri=uri), node.find('value').text
 
@@ -507,6 +614,53 @@ class ReagentLabelList(BaseDescriptor):
                 pass
         return self.value
 
+    def __set__(self, instance, values):
+        instance.get()
+        nodes = instance.root.findall('reagent-label')
+        if not nodes:
+            root = instance.root
+            for value in values:
+                ElementTree.SubElement(root, 'reagent-label', name=value)
+
+        elif len(values) != len(nodes):
+            raise ValueError("Mismatching number of reagent labels")
+        else:
+            for node, value in zip(nodes, values):
+                node.attrib['name'] = value
+
+
+class OutputReagentList(BaseDescriptor):
+    """
+    Instance attribute depicting output reagents as :
+
+    {
+      output_artifact_1:[reagent_label_name_1, reagent_label_name_2,...]
+      output_artifact_2:[reagent_label_name_3, reagent_label_name_4,...]
+    }
+    """
+    def __init__(self, artifact_class):
+        self.klass = artifact_class
+
+    def __get__(self, instance, cls):
+        instance.get()
+        self.value = {}
+        for node in instance.root.iter('output'):
+            self.value[self.klass(instance.lims, uri=node.attrib['uri'])] = [subnode.attrib['name'] for subnode in node.findall('reagent-label')]
+
+        return self.value
+
+    def __set__(self, instance, value):
+        out_r = ElementTree.Element('output-reagents')
+        for artifact in value:
+            out_a = ElementTree.SubElement(out_r, 'output', attrib={'uri':artifact.uri})
+            for reagent_label_name in value[artifact]:
+                rea_l = ElementTree.SubElement(out_a, 'reagent-label', attrib={'name':reagent_label_name})
+
+        instance.root.remove(instance.root.find('output-reagents'))
+        instance.root.append(out_r)
+
+
+
 
 class InputOutputMapList(BaseDescriptor):
     """An instance attribute yielding a list of tuples (input, output)
@@ -514,10 +668,17 @@ class InputOutputMapList(BaseDescriptor):
     maps of a Process instance.
     """
 
+    def __init__(self, *args):
+        super(BaseDescriptor, self).__init__()
+        self.rootkeys = args
+
     def __get__(self, instance, cls):
         instance.get()
         self.value = []
-        for node in instance.root.findall('input-output-map'):
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        for node in rootnode.findall('input-output-map'):
             input = self.get_dict(instance.lims, node.find('input'))
             output = self.get_dict(instance.lims, node.find('output'))
             self.value.append((input, output))
@@ -541,3 +702,87 @@ class InputOutputMapList(BaseDescriptor):
         if node is not None:
             result['parent-process'] = Process(lims, node.attrib['uri'])
         return result
+
+
+
+class ProcessTypeParametersDescriptor(object):
+    def __getitem__(self, index):
+        return self.params[index]
+
+    def __setitem__(self, index, value):
+        self.params[index] = value
+
+    def __delitem__(self, index):
+        del(self.params[index])
+
+    def __init__(self, pt_instance):
+        from genologics.internal_classes import ProcessTypeParameter
+        pt_instance.get()
+        self.tag = 'parameter'
+        self.params = []
+        for node in pt_instance.root.findall(self.tag):
+            self.params.append(ProcessTypeParameter(pt_instance, node))
+
+    def __repr__(self):
+        return str(self._params)
+
+
+class ProcessTypeProcessInputDescriptor(TagDescriptor):
+
+    def __getitem__(self, index):
+        return self._inputs[index]
+
+    def __setitem__(self, index, value):
+        self._inputs[index] = value
+
+    def __delitem__(self, index):
+        del(self._inputs[index])
+
+    def __init__(self):
+        self._inputs=[]
+        self.tag = 'process-input'
+        super(ProcessTypeProcessInputDescriptor, self).__init__(tag=self.tag)
+
+    def __get__(self, instance, owner):
+        from genologics.internal_classes import ProcessTypeProcessInput
+        for node in  instance.root.findall(self.tag):
+            self._inputs.append(ProcessTypeProcessInput(instance, node))
+        return self
+
+    def __repr__(self):
+        return str(self._inputs)
+
+
+class ProcessTypeProcessOutputDescriptor(TagDescriptor):
+
+    def __getitem__(self, index):
+        return self._inputs[index]
+
+    def __setitem__(self, index, value):
+        self._inputs[index] = value
+
+    def __delitem__(self, index):
+        del(self._inputs[index])
+
+    def __init__(self):
+        self._inputs=[]
+        self.tag = 'process-output'
+        super(ProcessTypeProcessOutputDescriptor, self).__init__(tag=self.tag)
+
+    def __get__(self, instance, owner):
+        from genologics.internal_classes import ProcessTypeProcessOutput
+        for node in instance.root.findall(self.tag):
+            self._inputs.append(ProcessTypeProcessOutput(instance, node))
+        return self
+
+    def __repr__(self):
+        return str(self._inputs)
+
+
+class NamedStringDescriptor(TagDescriptor):
+
+    def __get__(self, instance, owner):
+        self._internals={}
+        for node in instance.root.findall(self.tag):
+            self._internals[node.attrib['name']] = node.text
+        return self._internals

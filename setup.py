@@ -7,11 +7,6 @@ import glob
 # Fetch version from git tags.
 # if git is not available (PyPi package), use stored version.py.
 
-try:
-    version = subprocess.Popen(["git", "describe", "--abbrev=0"],stdout=subprocess.PIPE, universal_newlines=True).communicate()[0].rstrip()
-    version = version.decode("utf-8")
-except:
-    version = __version__
 
 try:
     with open("requirements.txt") as rq:
@@ -20,9 +15,9 @@ except:
     requires=["requests"]
 
 setup(name='genologics',
-      version=version,
-      description="Python interface to the GenoLogics LIMS (Laboratory Information Management System) server via its REST API.",
-      long_description="""A basic module for interacting with the GenoLogics LIMS server via its REST API.
+      version=__version__,
+      description="Python interface to the Illumina Basespace Clarity LIMS (Laboratory Information Management System) server via its REST API.",
+      long_description="""A basic module for interacting with the Illumina Basespace Clarity LIMS server via its REST API.
                           The goal is to provide simple access to the most common entities and their attributes in a reasonably Pythonic fashion.""",
       classifiers=[
 	"Development Status :: 4 - Beta",
@@ -30,18 +25,18 @@ setup(name='genologics',
 	"Intended Audience :: Developers",
 	"Intended Audience :: Healthcare Industry",
 	"Intended Audience :: Science/Research",
-	"License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+	"License :: OSI Approved :: MIT License",
 	"Operating System :: POSIX :: Linux",
 	"Programming Language :: Python",
 	"Topic :: Scientific/Engineering :: Medical Science Apps."
 	],
-      keywords='genologics api rest',
+      keywords='genologics api rest clarity lims illumina',
       author='Per Kraulis',
       author_email='per.kraulis@scilifelab.se',
       maintainer='Denis Moreno',
       maintainer_email='denis.moreno@scilifelab.se',
       url='https://github.com/scilifelab/genologics',
-      license='GPLv3',
+      license='MIT',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       scripts=glob.glob("scripts/*.py"),
       include_package_data=True,

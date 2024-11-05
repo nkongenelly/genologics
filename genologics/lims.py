@@ -14,13 +14,14 @@ import os
 import re
 from io import BytesIO
 import requests
+from urllib.parse import urlparse
 
 # python 2.7, 3+ compatibility
 from sys import version_info
 
 if version_info[0] == 2:
-    from urlparse import urljoin
-    from urllib import urlencode
+    from urllib.parse import urljoin
+    from urllib.parse import urlencode
 else:
     from urllib.parse import urljoin
     from urllib.parse import urlencode
@@ -36,7 +37,7 @@ if version_info[:2] < (2,7):
     ElementTree.ParseError = expat.ExpatError
     p26_write = ElementTree.ElementTree.write
     def write_with_xml_declaration(self, file, encoding, xml_declaration):
-        assert xml_declaration is True # Support our use case only 
+        assert xml_declaration is True # Support our use case only
         file.write("<?xml version='1.0' encoding='utf-8'?>\n")
         p26_write(self, file, encoding=encoding)
     ElementTree.ElementTree.write = write_with_xml_declaration
@@ -55,11 +56,11 @@ class Lims(object):
                     For example: https://genologics.scilifelab.se:8443/
         username: The account name of the user to login as.
         password: The password for the user account to login as.
-        version: The optional LIMS API version, by default 'v2' 
+        version: The optional LIMS API version, by default 'v2'
         """
-        self.baseuri = baseuri.rstrip('/') + '/'
-        self.username = username
-        self.password = password
+        self.baseuri = "https://lims-dev-c7.snpseq.medsci.uu.se/" # baseuri.rstrip('/') + '/'
+        self.username = "nellyn" # username
+        self.password = "g3H2|6-`_*0[" # password
         self.VERSION = version
         self.cache = dict()
         # For optimization purposes, enables requests to persist connections
@@ -98,9 +99,12 @@ class Lims(object):
         else:
             raise ValueError("id or uri required")
         url = urljoin(self.baseuri, '/'.join(segments))
-        r = self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT)
+        r = self.request_session.get(url, auth=(self.username, self.password), timeout=TIMEOUT, stream=True)
         self.validate_response(r)
-        return r.text
+        if 'text' in r.headers['Content-Type']:
+            return r.text
+        else:
+            return r.raw
 
     def upload_new_file(self, entity, file_to_upload):
         """Upload a file and attach it to the provided entity."""
@@ -154,6 +158,16 @@ class Lims(object):
                                    'accept': 'application/xml'})
         return self.parse_response(r, accept_status_codes=[200, 201, 202])
 
+    def delete(self, uri, params=dict()):
+        """sends a DELETE to the given URI.
+        Return the response XML as an ElementTree.
+        """
+        r = requests.delete(uri, params=params,
+                          auth=(self.username, self.password),
+                          headers={'content-type': 'application/xml',
+                                   'accept': 'application/xml'})
+        return self.validate_response(r, accept_status_codes=[204])
+
     def check_version(self):
         """Raise ValueError if the version for this interface
         does not match any of the versions given for the API.
@@ -197,10 +211,10 @@ class Lims(object):
         root = ElementTree.fromstring(response.content)
         return root
 
-    def get_udfs(self, name=None, attach_to_name=None, attach_to_category=None, start_index=None):
+    def get_udfs(self, name=None, attach_to_name=None, attach_to_category=None, start_index=None, add_info=False):
         """Get a list of udfs, filtered by keyword arguments.
         name: name of udf
-        attach_to_name: item in the system, to wich the udf is attached, such as 
+        attach_to_name: item in the system, to wich the udf is attached, such as
             Sample, Project, Container, or the name of a process.
         attach_to_category: If 'attach_to_name' is the name of a process, such as 'CaliperGX QC (DNA)',
              then you need to set attach_to_category='ProcessType'. Must not be provided otherwise.
@@ -210,7 +224,7 @@ class Lims(object):
                                   attach_to_name=attach_to_name,
                                   attach_to_category=attach_to_category,
                                   start_index=start_index)
-        return self._get_instances(Udfconfig, params=params)
+        return self._get_instances(Udfconfig, add_info=add_info, params=params)
 
     def get_reagent_types(self, name=None, start_index=None):
         """Get a list of reqgent types, filtered by keyword arguments.
@@ -221,8 +235,12 @@ class Lims(object):
                                   start_index=start_index)
         return self._get_instances(ReagentType, params=params)
 
+    def get_containertypes(self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(Containertype, params=params)
+
     def get_labs(self, name=None, last_modified=None,
-                 udf=dict(), udtname=None, udt=dict(), start_index=None):
+                 udf=dict(), udtname=None, udt=dict(), start_index=None, add_info=False):
         """Get a list of labs, filtered by keyword arguments.
         name: Lab name, or list of names.
         last_modified: Since the given ISO format datetime.
@@ -236,11 +254,12 @@ class Lims(object):
                                   last_modified=last_modified,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Lab, params=params)
+        return self._get_instances(Lab, add_info=add_info, params=params)
 
     def get_researchers(self, firstname=None, lastname=None, username=None,
                         last_modified=None,
-                        udf=dict(), udtname=None, udt=dict(), start_index=None):
+                        udf=dict(), udtname=None, udt=dict(), start_index=None,
+                        add_info=False):
         """Get a list of researchers, filtered by keyword arguments.
         firstname: Researcher first name, or list of names.
         lastname: Researcher last name, or list of names.
@@ -258,10 +277,11 @@ class Lims(object):
                                   last_modified=last_modified,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Researcher, params=params)
+        return self._get_instances(Researcher, add_info=add_info, params=params)
 
     def get_projects(self, name=None, open_date=None, last_modified=None,
-                     udf=dict(), udtname=None, udt=dict(), start_index=None):
+                     udf=dict(), udtname=None, udt=dict(), start_index=None,
+                     add_info=False):
         """Get a list of projects, filtered by keyword arguments.
         name: Project name, or list of names.
         open_date: Since the given ISO format date.
@@ -277,7 +297,7 @@ class Lims(object):
                                   last_modified=last_modified,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Project, params=params)
+        return self._get_instances(Project, add_info=add_info, params=params)
 
     def get_sample_number(self, name=None, projectname=None, projectlimsid=None,
                           udf=dict(), udtname=None, udt=dict(), start_index=None):
@@ -360,9 +380,17 @@ class Lims(object):
         else:
             return self._get_instances(Artifact, params=params)
 
+    def get_container_types(self, name=None, start_index=None):
+        """Get a list of container types, filtered by keyword arguments.
+        name: Container Type name.
+        start-index: Page to retrieve, all if None."""
+        params = self._get_params(name=name, start_index=start_index)
+        return self._get_instances(Containertype, params=params)
+
     def get_containers(self, name=None, type=None,
                        state=None, last_modified=None,
-                       udf=dict(), udtname=None, udt=dict(), start_index=None):
+                       udf=dict(), udtname=None, udt=dict(), start_index=None,
+                       add_info=False):
         """Get a list of containers, filtered by keyword arguments.
         name: Containers name, or list of names.
         type: Container type, or list of types.
@@ -380,7 +408,7 @@ class Lims(object):
                                   last_modified=last_modified,
                                   start_index=start_index)
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
-        return self._get_instances(Container, params=params)
+        return self._get_instances(Container, add_info=add_info, params=params)
 
     def get_processes(self, last_modified=None, type=None,
                       inputartifactlimsid=None,
@@ -409,33 +437,38 @@ class Lims(object):
         params.update(self._get_params_udf(udf=udf, udtname=udtname, udt=udt))
         return self._get_instances(Process, params=params)
 
-    def get_workflows(self, name=None):
+    def get_automations(self, name=None, add_info=False):
+        """Get the list of configured automations on the system """
+        params = self._get_params(name=name)
+        return self._get_instances(Automation, add_info=add_info, params=params)
+
+    def get_workflows(self, name=None, add_info=False):
         """Get the list of existing workflows on the system """
         params = self._get_params(name=name)
-        return self._get_instances(Workflow, params=params)
+        return self._get_instances(Workflow, add_info=add_info, params=params)
 
-    def get_process_types(self, displayname=None):
+    def get_process_types(self, displayname=None, add_info=False):
         """Get a list of process types with the specified name."""
         params = self._get_params(displayname=displayname)
-        return self._get_instances(Processtype, params=params)
+        return self._get_instances(Processtype, add_info=add_info, params=params)
 
-    def get_reagent_types(self, name=None):
+    def get_reagent_types(self, name=None, add_info=False):
         params = self._get_params(name=name)
-        return self._get_instances(ReagentType, params=params)
+        return self._get_instances(ReagentType, add_info=add_info, params=params)
 
-    def get_protocols(self, name=None):
+    def get_protocols(self, name=None, add_info=False):
         """Get the list of existing protocols on the system """
         params = self._get_params(name=name)
-        return self._get_instances(Protocol, params=params)
+        return self._get_instances(Protocol, add_info=add_info, params=params)
 
-    def get_reagent_kits(self, name=None, start_index=None):
+    def get_reagent_kits(self, name=None, start_index=None, add_info=False):
         """Get a list of reagent kits, filtered by keyword arguments.
         name: reagent kit  name, or list of names.
         start_index: Page to retrieve; all if None.
         """
         params = self._get_params(name=name,
                                   start_index=start_index)
-        return self._get_instances(ReagentKit, params=params)
+        return self._get_instances(ReagentKit, add_info=add_info, params=params)
 
     def get_reagent_lots(self, name=None, kitname=None, number=None,
                          start_index=None):
@@ -449,10 +482,15 @@ class Lims(object):
                                   start_index=start_index)
         return self._get_instances(ReagentLot, params=params)
 
+    def get_instruments(self, name=None):
+        """Returns a list of Instruments, can be filtered by name"""
+        params = self._get_params(name=name)
+        return self._get_instances(Instrument, params=params)
+
     def _get_params(self, **kwargs):
         "Convert keyword arguments to a kwargs dictionary."
         result = dict()
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             if value is None: continue
             result[key.replace('_', '-')] = value
         return result
@@ -460,27 +498,37 @@ class Lims(object):
     def _get_params_udf(self, udf=dict(), udtname=None, udt=dict()):
         "Convert UDF-ish arguments to a params dictionary."
         result = dict()
-        for key, value in udf.items():
+        for key, value in list(udf.items()):
             result["udf.%s" % key] = value
         if udtname is not None:
             result['udt.name'] = udtname
-        for key, value in udt.items():
+        for key, value in list(udt.items()):
             result["udt.%s" % key] = value
         return result
 
-    def _get_instances(self, klass, params=dict()):
-        result = []
+    def _get_instances(self, klass, add_info=None, params=dict()):
+        results = []
+        additionnal_info_dicts = []
         tag = klass._TAG
         if tag is None:
             tag = klass.__name__.lower()
         root = self.get(self.get_uri(klass._URI), params=params)
         while params.get('start-index') is None:  # Loop over all pages.
             for node in root.findall(tag):
-                result.append(klass(self, uri=node.attrib['uri']))
+                results.append(klass(self, uri=node.attrib['uri']))
+                info_dict = {}
+                for attrib_key in node.attrib:
+                    info_dict[attrib_key] = node.attrib['uri']
+                for subnode in node:
+                    info_dict[subnode.tag] = subnode.text
+                additionnal_info_dicts.append(info_dict)
             node = root.find('next-page')
             if node is None: break
             root = self.get(node.attrib['uri'], params=params)
-        return result
+        if add_info:
+            return results, additionnal_info_dicts
+        else:
+            return results
 
     def get_batch(self, instances, force=False):
         """Get the content of a set of instances using the efficient batch call.
@@ -504,7 +552,8 @@ class Lims(object):
         needs_request = False
         instance_map = {}
         for instance in instances:
-            instance_map[instance.id] = instance
+            instance_map[instance.uri] = instance
+
             if force or instance.root is None:
                 ElementTree.SubElement(root, 'link', dict(uri=instance.uri,
                                                           rel=instance.__class__._URI))
@@ -514,10 +563,21 @@ class Lims(object):
             uri = self.get_uri(instance.__class__._URI, 'batch/retrieve')
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
-            for node in root.getchildren():
-                instance = instance_map[node.attrib['limsid']]
+            for node in list(root):
+                uri = node.attrib['uri']
+                if uri in instance_map:
+                    instance = instance_map[uri]
+                else:
+                    # We're getting a uri we didn't ask for. This should mean that we
+                    # asked for one without the state flag but are getting one with it
+                    parsed = urlparse(uri)
+                    uri_without_state_param = "{}://{}{}".format(
+                            parsed.scheme, parsed.netloc, parsed.path)
+                    instance = instance_map[uri_without_state_param]
+                    node.attrib['uri'] = uri_without_state_param
                 instance.root = node
-        return instance_map.values()
+
+        return list(instance_map.values())
 
     def put_batch(self, instances):
         """Update multiple instances using a single batch request."""
@@ -571,3 +631,19 @@ class Lims(object):
     def write(self, outfile, etree):
         "Write the ElementTree contents as UTF-8 encoded XML to the open file."
         etree.write(outfile, encoding='utf-8', xml_declaration=True)
+
+    def create_container(self, container_type, name=None):
+        """Create a new container of type container_type and returns it
+        Akin to Container.create(lims type=container_type, name=name)"""
+        el = ElementTree.Element(nsmap('con:container'))
+        if name is not None:
+            nm = ElementTree.SubElement(el, 'name')
+            nm.text = name
+
+        ty = ElementTree.SubElement(el, 'type', attrib={'uri':container_type.uri, 'name':container_type.name})
+        ret_el = self.post(uri=self.get_uri('containers'), data=ElementTree.tostring(el))
+        ret_con = Container(self, uri=ret_el.attrib['uri'])
+        ret_con.root = ret_el
+
+        return ret_con
+
