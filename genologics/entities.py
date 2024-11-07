@@ -274,9 +274,9 @@ class SampleHistory:
 class Entity:
     "Base class for the entities in the LIMS database."
 
-    _TAG: str | None = None
-    _URI: str | None = None
-    _PREFIX: str | None = None
+    _TAG = None
+    _URI = None
+    _PREFIX = None
 
     def __new__(cls, lims, uri=None, id=None, _create_new=False, extra=None):
         if not uri:
