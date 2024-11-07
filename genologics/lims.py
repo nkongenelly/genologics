@@ -671,15 +671,12 @@ class Lims:
             return []
 
         ALLOWED_TAGS = ("artifact", "container", "file", "sample")
-        if instances[0]._TAG not in ALLOWED_TAGS:
-            raise TypeError(
-                f"Cannot retrieve batch for instances of type '{instances[0]._TAG}'"
-            )
-
         root = ElementTree.Element(nsmap("ri:links"))
         needs_request = False
         instance_map = {}
         for instance in instances:
+            if instance._TAG not in ALLOWED_TAGS:
+                raise TypeError( f"Cannot retrieve batch for instances of type '{instances[0]._TAG}'") 
             instance_map[instance.uri] = instance
 
             if force or instance.root is None:
@@ -693,7 +690,16 @@ class Lims:
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in list(root):
-                instance = instance_map[node.attrib["limsid"]]
+                uri = node.attrib['uri'] 
+                if uri in instance_map:
+                    instance = instance_map[uri]
+                else:
+                    # We're getting a uri we didn't ask for. This should mean that we
+                    # asked for one without the state flag but are getting one with it
+                    parsed = urlparse(uri)
+                    uri_without_state_param = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                    instance = instance_map[uri_without_state_param]
+                    node.attrib['uri'] = uri_without_state_param  
                 instance.root = node
         return list(instance_map.values())
 
