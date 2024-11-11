@@ -6,6 +6,11 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
 
+from genologics.constants import nsmap
+from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+
+
+from decimal import Decimal
 import datetime
 import logging
 import time
@@ -70,6 +75,13 @@ class StringAttributeDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
+        # Skip loading the instance if we have information in the extra dictionary. This
+        # allows faster loading when the data is available in an overview page. An example is
+        # that names of Stages and Protocols is available in the details page for Workflows.
+
+        # If we have loaded the details for this entity (instance.root is not None), we always use that.
+        if instance.extra is not None and instance.root is None and self.tag in instance.extra:
+            return instance.extra[self.tag]
         instance.get()
         return instance.root.attrib[self.tag]
 
@@ -145,7 +157,10 @@ class UdfDictionary:
     "Dictionary-like container of UDFs, optionally within a UDT."
 
     def _is_string(self, value):
-        return isinstance(value, six.string_types)
+        try:
+            return isinstance(value, str)
+        except:
+            return isinstance(value, str)
 
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
@@ -189,7 +204,7 @@ class UdfDictionary:
                 self._udt = elem.attrib["name"]
                 self._elems = elem.findall(nsmap("udf:field"))
         else:
-            tag = nsmap("udf:field")
+            tag = nsmap('udf:field')
             for elem in list(self.rootnode):
                 if elem.tag == tag:
                     self._elems.append(elem)
@@ -224,10 +239,11 @@ class UdfDictionary:
 
     def __setitem__(self, key, value):
         self._lookup[key] = value
+        key_found_in_xml = False
         for node in self._elems:
-            if node.attrib["name"] != key:
-                continue
-            vtype = node.attrib["type"].lower()
+            if node.attrib['name'] != key: continue
+            key_found_in_xml = True
+            vtype = node.attrib['type'].lower()
 
             if value is None:
                 value = ""
@@ -258,13 +274,15 @@ class UdfDictionary:
                     raise TypeError("URI UDF requires str or punycode (unicode) value")
                 value = str(value)
             else:
-                raise NotImplementedError(f"UDF type '{vtype}'")
-            if not isinstance(value, str):
-                if not self._is_string(value):
-                    value = str(value).encode("UTF-8")
+                raise NotImplemented("UDF type '%s'" % vtype)
+            if value is None:
+                value = ''
+            elif not isinstance(value, str):
+                value = str(value).encode('UTF-8')
             node.text = value
             break
-        else:  # Create new entry; heuristics for type
+
+        if not key_found_in_xml: # Create new entry; heuristics for type
             if self._is_string(value):
                 vtype = "\n" in value and "Text" or "String"
             elif isinstance(value, bool):
@@ -314,6 +332,9 @@ class UdfDictionary:
 
     def __iter__(self):
         return self
+
+    def __next__(self):
+        return self.__next__()
 
     def __next__(self):
         try:
@@ -516,47 +537,24 @@ class NestedStringListDescriptor(StringListDescriptor):
 class NestedEntityListDescriptor(EntityListDescriptor):
     """same as EntityListDescriptor, but works on nested elements"""
 
-    def __init__(self, tag, klass, *args):
+    def __init__(self, tag, klass, rootkey=None, extra=[]):
         super(EntityListDescriptor, self).__init__(tag, klass)
         self.klass = klass
         self.tag = tag
-        self.rootkeys = args
+        self.rootkey = rootkey
+        self.extra_meta = extra
 
     def __get__(self, instance, cls):
         instance.get()
         result = []
         rootnode = instance.root
-        for rootkey in self.rootkeys:
-            rootnode = rootnode.find(rootkey)
+        if self.rootkey:
+            rootnode = rootnode.find(self.rootkey)
         for node in rootnode.findall(self.tag):
-            result.append(self.klass(instance.lims, uri=node.attrib["uri"]))
-
-        return result
-
-
-class MultiPageNestedEntityListDescriptor(EntityListDescriptor):
-    """same as NestedEntityListDescriptor, but works on multiple pages, for Queues"""
-
-    def __init__(self, tag, klass, *args):
-        super(EntityListDescriptor, self).__init__(tag, klass)
-        self.klass = klass
-        self.tag = tag
-        self.rootkeys = args
-
-    def __get__(self, instance, cls):
-        instance.get()
-        result = []
-        rootnode = instance.root
-        for rootkey in self.rootkeys:
-            rootnode = rootnode.find(rootkey)
-        for node in rootnode.findall(self.tag):
-            result.append(self.klass(instance.lims, uri=node.attrib["uri"]))
-
-        if instance.root.find("next-page") is not None:
-            next_queue_page = instance.__class__(
-                instance.lims, uri=instance.root.find("next-page").attrib.get("uri")
-            )
-            result.extend(next_queue_page.artifacts)
+            # NOTE: The name should correspond to the name on the object, not necessarily the same
+            # as the name of the attribute.
+            extra = {extra_name: node.attrib[extra_name] for extra_name in self.extra_meta}
+            result.append(self.klass(instance.lims, uri=node.attrib['uri'], extra=extra))
         return result
 
 
@@ -603,6 +601,20 @@ class ReagentLabelList(BaseDescriptor):
             except:
                 pass
         return self.value
+
+    def __set__(self, instance, values):
+        instance.get()
+        nodes = instance.root.findall('reagent-label')
+        if not nodes:
+            root = instance.root
+            for value in values:
+                ElementTree.SubElement(root, 'reagent-label', name=value)
+
+        elif len(values) != len(nodes):
+            raise ValueError("Mismatching number of reagent labels")
+        else:
+            for node, value in zip(nodes, values):
+                node.attrib['name'] = value
 
 
 class OutputReagentList(BaseDescriptor):

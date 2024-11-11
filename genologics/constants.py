@@ -41,8 +41,8 @@ _NSMAP = dict(
     wkfcnf="http://genologics.com/ri/workflowconfiguration",
 )
 
-for prefix, uri in _NSMAP.items():
-    ElementTree.register_namespace(prefix, uri)
+for prefix, uri in list(_NSMAP.items()):
+    ElementTree._namespace_map[uri] = prefix
 
 _NSPATTERN = re.compile(r"(\{)(.+?)(\})")
 

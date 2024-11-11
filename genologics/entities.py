@@ -6,41 +6,24 @@ Per Kraulis, Science for Life Laboratory, Stockholm, Sweden.
 Copyright (C) 2012 Per Kraulis
 """
 
-import logging
-from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
+from genologics.constants import nsmap
+from genologics.descriptors import StringDescriptor, StringDictionaryDescriptor, UdfDictionaryDescriptor, \
+    UdtDictionaryDescriptor, ExternalidListDescriptor, EntityDescriptor, BooleanDescriptor, EntityListDescriptor, \
+    StringAttributeDescriptor, StringListDescriptor, DimensionDescriptor, IntegerDescriptor, \
+    PlacementDictionaryDescriptor, InputOutputMapList, LocationDescriptor, ReagentLabelList, NestedEntityListDescriptor, \
+    NestedStringListDescriptor, NestedAttributeListDescriptor, IntegerAttributeDescriptor, NestedStringDescriptor, \
+    NestedBooleanDescriptor, MultiPageNestedEntityListDescriptor, ProcessTypeParametersDescriptor, \
+    ProcessTypeProcessInputDescriptor, ProcessTypeProcessOutputDescriptor, NamedStringDescriptor, OutputReagentList
+
+try:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+except ImportError:
+    from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
+
 from xml.etree import ElementTree
 
-from genologics.constants import nsmap
-from genologics.descriptors import (
-    BooleanDescriptor,
-    DimensionDescriptor,
-    EntityDescriptor,
-    EntityListDescriptor,
-    ExternalidListDescriptor,
-    InputOutputMapList,
-    IntegerAttributeDescriptor,
-    IntegerDescriptor,
-    LocationDescriptor,
-    MultiPageNestedEntityListDescriptor,
-    NamedStringDescriptor,
-    NestedAttributeListDescriptor,
-    NestedBooleanDescriptor,
-    NestedEntityListDescriptor,
-    NestedStringDescriptor,
-    NestedStringListDescriptor,
-    OutputReagentList,
-    PlacementDictionaryDescriptor,
-    ProcessTypeParametersDescriptor,
-    ProcessTypeProcessInputDescriptor,
-    ProcessTypeProcessOutputDescriptor,
-    ReagentLabelList,
-    StringAttributeDescriptor,
-    StringDescriptor,
-    StringDictionaryDescriptor,
-    StringListDescriptor,
-    UdfDictionaryDescriptor,
-    UdtDictionaryDescriptor,
-)
+import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -88,14 +71,10 @@ class SampleHistory:
         logger.info("Input\tProcess\tProcess info")
         for key, dict in self.history.items():
             logger.info(key)
-            for key2, dict2 in dict.items():
-                logger.info(f"\t{key2}")
-                for key, value in dict2.items():
-                    logger.info(
-                        "\t\t{}->{}".format(
-                            key, (value if value is not None else "None")
-                        )
-                    )
+            for key2, dict2 in list(dict.items()):
+                logger.info("\t{}".format(key2))
+                for key, value in list(dict2.items()):
+                    logger.info("\t\t{0}->{1}".format(key, (value if value is not None else "None")))
         logger.info("\nHistory List")
         for art in self.history_list:
             logger.info(art)
@@ -299,7 +278,7 @@ class Entity:
     _URI: str | None = None
     _PREFIX: str | None = None
 
-    def __new__(cls, lims, uri=None, id=None, _create_new=False):
+    def __new__(cls, lims, uri=None, id=None, _create_new=False, extra=None):
         if not uri:
             if id:
                 uri = lims.get_uri(cls._URI, id)
@@ -313,7 +292,7 @@ class Entity:
         except KeyError:
             return object.__new__(cls)
 
-    def __init__(self, lims, uri=None, id=None, _create_new=False):
+    def __init__(self, lims, uri=None, id=None, _create_new=False, extra=None):
         assert uri or id or _create_new
         if not _create_new:
             if hasattr(self, "lims"):
@@ -325,6 +304,7 @@ class Entity:
         self.lims = lims
         self._uri = uri
         self.root = None
+        self.extra = extra
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.id})"
@@ -492,6 +472,16 @@ class File(Entity):
     is_published = BooleanDescriptor("is-published")
 
 
+class Instrument(Entity):
+    "Instrument"
+    _URI = 'instruments'
+    _PREFIX = 'inst'
+    name = StringDescriptor('name')
+    type = StringDescriptor('type')
+    serial_number = StringDescriptor('serial-number')
+    archived = BooleanDescriptor('archived')
+
+
 class Project(Entity):
     "Project concerning a number of samples; associated with a researcher."
 
@@ -499,15 +489,15 @@ class Project(Entity):
     _TAG = "project"
     _PREFIX = "prj"
 
-    name = StringDescriptor("name")
-    open_date = StringDescriptor("open-date")
-    close_date = StringDescriptor("close-date")
-    invoice_date = StringDescriptor("invoice-date")
-    researcher = EntityDescriptor("researcher", Researcher)
-    udf = UdfDictionaryDescriptor()
-    udt = UdtDictionaryDescriptor()
-    files = EntityListDescriptor(nsmap("file:file"), File)
-    externalids = ExternalidListDescriptor()
+    name         = StringDescriptor('name')
+    open_date    = StringDescriptor('open-date')
+    close_date   = StringDescriptor('close-date')
+    invoice_date = StringDescriptor('invoice-date')
+    researcher   = EntityDescriptor('researcher', Researcher)
+    udf          = UdfDictionaryDescriptor()
+    udt          = UdtDictionaryDescriptor()
+    files        = EntityListDescriptor(nsmap('file:file'), File)
+    externalids  = ExternalidListDescriptor()
     # permissions XXX
 
 
@@ -532,23 +522,62 @@ class Sample(Entity):
     # biosource XXX
 
     @classmethod
-    def create(cls, lims, container, position, udfs=None, **kwargs):
-        """Create an instance of Sample from attributes then post it to the LIMS"""
-        if udfs is None:
-            udfs = {}
-        if not isinstance(container, Container):
-            raise TypeError(f"{container} is not of type Container")
-        instance = super()._create(
-            lims, creation_tag="samplecreation", udfs=udfs, **kwargs
-        )
+    def create(cls, lims, container, position, **kwargs):
+        """Create an instance of Sample from attributes then post it to the LIMS
 
-        location = ElementTree.SubElement(instance.root, "location")
-        ElementTree.SubElement(location, "container", dict(uri=container.uri))
-        position_element = ElementTree.SubElement(location, "value")
-        position_element.text = position
+        Udfs can be sent in with the kwarg `udfs`. It should be a dictionary-like.
+        """
+        instance = cls.create_in_memory_instance(lims, container, position, **kwargs)
         data = lims.tostring(ElementTree.ElementTree(instance.root))
         instance.root = lims.post(uri=lims.get_uri(cls._URI), data=data)
-        instance._uri = instance.root.attrib["uri"]
+        instance._uri = instance.root.attrib['uri']
+        return instance
+
+    @classmethod
+    def batch_create(cls, lims, in_memory_instances):
+        """
+        Batch creates the samples. The list in_memory_instances is created by calls to
+        `Sample.create_in_memory_instance`
+        """
+        # Create a batch request from all in_memory_instances:
+        batch = ElementTree.Element(nsmap(cls._PREFIX + ':details'))
+
+        for instance in in_memory_instances:
+            element = copy.deepcopy(instance.root)
+            batch.append(element)
+
+        data = lims.tostring(ElementTree.ElementTree(batch))
+        response = lims.post(uri=lims.get_uri('samples/batch/create'), data=data)
+
+        ret = list()
+        for entry in response:
+            uri = entry.attrib['uri']
+            ret.append(Sample(lims=lims, uri=uri))
+        return ret
+
+    @classmethod
+    def create_in_memory_instance(cls, lims, container, position, **kwargs):
+        """
+        Creates a request for creating a single sample object
+        """
+        udfs = kwargs.pop("udfs", dict())
+        if not isinstance(container, Container):
+            raise TypeError('%s is not of type Container' % container)
+        instance = super(Sample, cls)._create(lims, creation_tag='samplecreation', **kwargs)
+        location = ElementTree.SubElement(instance.root, 'location')
+        ElementTree.SubElement(location, 'container', dict(uri=container.uri))
+        position_element = ElementTree.SubElement(location, 'value')
+        position_element.text = position
+
+        # NOTE: This is a quick fix. I assume that it must be possible to initialize samples
+        # with UDFs
+        for key, value in list(udfs.items()):
+            attrib = {
+                "name": key,
+                "xmlns:udf": "http://genologics.com/ri/userdefined",
+            }
+            udf = ElementTree.SubElement(instance.root, 'udf:field', attrib=attrib)
+            udf.text = value
         return instance
 
 
@@ -595,7 +624,17 @@ class Container(Entity):
 class Udfconfig(Entity):
     "Instance of field type (cnf namespace)."
 
-    _URI = "configuration/udfs"
+    name                          = StringDescriptor('name')
+    attach_to_name                = StringDescriptor('attach-to-name')
+    attach_to_category            = StringDescriptor('attach-to-category')
+    show_in_lablink               = BooleanDescriptor('show-in-lablink')
+    allow_non_preset_values       = BooleanDescriptor('allow-non-preset-values')
+    first_preset_is_default_value = BooleanDescriptor('first-preset-is-default-value')
+    show_in_tables                = BooleanDescriptor('show-in-tables')
+    is_editable                   = BooleanDescriptor('is-editable')
+    is_deviation                  = BooleanDescriptor('is-deviation')
+    is_controlled_vocabulary      = BooleanDescriptor('is-controlled-vocabulary')
+    presets                       = StringListDescriptor('preset')
 
     name = StringDescriptor("name")
     attach_to_name = StringDescriptor("attach-to-name")
@@ -653,11 +692,11 @@ class Process(Entity):
     technician = EntityDescriptor("technician", Researcher)
     protocol_name = StringDescriptor("protocol-name")
     input_output_maps = InputOutputMapList()
-    udf = UdfDictionaryDescriptor()
-    udt = UdtDictionaryDescriptor()
-    files = EntityListDescriptor(nsmap("file:file"), File)
-    process_parameter = StringDescriptor("process-parameter")
-    instrument = EntityDescriptor("instrument", Instrument)
+    udf               = UdfDictionaryDescriptor()
+    udt               = UdtDictionaryDescriptor()
+    files             = EntityListDescriptor(nsmap('file:file'), File)
+    process_parameter = StringDescriptor('process-parameter')
+    instrument = EntityDescriptor('instrument', Instrument)
 
     # process_parameters XXX
 
@@ -1151,16 +1190,16 @@ class Step(Entity):
     _URI = "steps"
     _PREFIX = "stp"
 
-    current_state = StringAttributeDescriptor("current-state")
-    _reagent_lots = EntityDescriptor("reagent-lots", StepReagentLots)
-    actions = EntityDescriptor("actions", StepActions)
-    date_started = StringDescriptor("date-started")
-    date_completed = StringDescriptor("date-completed")
-    placements = EntityDescriptor("placements", StepPlacements)
-    details = EntityDescriptor("details", StepDetails)
-    step_pools = EntityDescriptor("pools", StepPools)
-    program_status = EntityDescriptor("program-status", StepProgramStatus)
-    reagents = EntityDescriptor("reagents", StepReagents)
+    current_state = StringAttributeDescriptor('current-state')
+    _reagent_lots = EntityDescriptor('reagent-lots', StepReagentLots)
+    actions       = EntityDescriptor('actions', StepActions)
+    placements    = EntityDescriptor('placements', StepPlacements)
+    details       = EntityDescriptor('details', StepDetails)
+    step_pools         = EntityDescriptor('pools', StepPools)
+    program_status     = EntityDescriptor('program-status', StepProgramStatus)
+    reagents     = EntityDescriptor('reagents', StepReagents)
+    date_started    = StringDescriptor('date-started')
+    date_completed  = StringDescriptor('date-completed')
 
     def advance(self):
         self.get()
@@ -1240,27 +1279,9 @@ class ProtocolStep(Entity):
 class Protocol(Entity):
     """Protocol, holding ProtocolSteps and protocol-properties"""
 
-    _URI = "configuration/protocols"
-    _TAG = "protocol"
-
-    steps = NestedEntityListDescriptor("step", ProtocolStep, "steps")
-    properties = NestedAttributeListDescriptor(
-        "protocol-property", "protocol-properties"
-    )
-
-
-class Automation(Entity):
-    """Automation, holding Automation configurations"""
-
-    _URI = "configuration/automations"
-    _TAG = "automation"
-
-    process_types = NestedEntityListDescriptor(
-        "process-type", Processtype, "process-types"
-    )
-    string = NestedStringDescriptor("string")
-    name = StringAttributeDescriptor("name")
-    context = NestedStringDescriptor("context")
+    name       = StringAttributeDescriptor('name')
+    steps      = NestedEntityListDescriptor('step', ProtocolStep, 'steps')
+    properties = NestedAttributeListDescriptor('protocol-property', 'protocol-properties')
 
 
 class Stage(Entity):
@@ -1278,10 +1299,10 @@ class Workflow(Entity):
     _URI = "configuration/workflows"
     _TAG = "workflow"
 
-    name = StringAttributeDescriptor("name")
-    status = StringAttributeDescriptor("status")
-    protocols = NestedEntityListDescriptor("protocol", Protocol, "protocols")
-    stages = NestedEntityListDescriptor("stage", Stage, "stages")
+    name      = StringAttributeDescriptor("name")
+    status    = StringAttributeDescriptor("status")
+    protocols = NestedEntityListDescriptor('protocol', Protocol, 'protocols', extra=["name"])
+    stages    = NestedEntityListDescriptor('stage', Stage, 'stages', extra=["name"])
 
 
 class ReagentType(Entity):

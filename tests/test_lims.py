@@ -13,9 +13,13 @@ except NameError:  # callable() doesn't exist in Python 3.0 and 3.1
         return isinstance(obj, collections.Callable)
 
 
-import builtins
-from unittest.mock import Mock, patch
-
+from sys import version_info
+if version_info[0] == 2:
+    from mock import patch, Mock
+    import builtins as builtins
+else:
+    from unittest.mock import patch, Mock
+    import builtins
 
 class TestLims(TestCase):
     url = "http://testgenologics.com:4040"
