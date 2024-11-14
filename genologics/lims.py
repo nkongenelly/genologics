@@ -23,18 +23,11 @@ import os
 import re
 from io import BytesIO
 import requests
-from urllib.parse import urlparse
 
 # python 2.7, 3+ compatibility
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlparse
 from xml.etree import ElementTree
 
-if version_info[0] == 2:
-    from urllib.parse import urljoin
-    from urllib.parse import urlencode
-else:
-    from urllib.parse import urljoin
-    from urllib.parse import urlencode
 
 from genologics.constants import nsmap
 
@@ -58,19 +51,6 @@ from .entities import (
     Udfconfig,
     Workflow,
 )
-
-# Python 2.6 support work-arounds
-# - Exception ElementTree.ParseError does not exist
-# - ElementTree.ElementTree.write does not take arg. xml_declaration
-if version_info[:2] < (2,7):
-    from xml.parsers import expat
-    ElementTree.ParseError = expat.ExpatError
-    p26_write = ElementTree.ElementTree.write
-    def write_with_xml_declaration(self, file, encoding, xml_declaration):
-        assert xml_declaration is True # Support our use case only
-        file.write("<?xml version='1.0' encoding='utf-8'?>\n")
-        p26_write(self, file, encoding=encoding)
-    ElementTree.ElementTree.write = write_with_xml_declaration
 
 TIMEOUT = 16
 
