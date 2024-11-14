@@ -1284,6 +1284,20 @@ class Protocol(Entity):
     properties = NestedAttributeListDescriptor("protocol-property", "protocol-properties")
 
 
+class Automation(Entity):
+    """Automation, holding Automation configurations"""
+
+    _URI = "configuration/automations"
+    _TAG = "automation"
+
+    process_types = NestedEntityListDescriptor(
+        "process-type", Processtype, "process-types"
+    )
+    string = NestedStringDescriptor("string")
+    name = StringAttributeDescriptor("name")
+    context = NestedStringDescriptor("context")
+
+
 class Stage(Entity):
     """Holds Protocol/Workflow"""
 

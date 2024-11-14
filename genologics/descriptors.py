@@ -558,6 +558,32 @@ class NestedEntityListDescriptor(EntityListDescriptor):
         return result
 
 
+class MultiPageNestedEntityListDescriptor(EntityListDescriptor):
+    """same as NestedEntityListDescriptor, but works on multiple pages, for Queues"""
+
+    def __init__(self, tag, klass, *args):
+        super(EntityListDescriptor, self).__init__(tag, klass)
+        self.klass = klass
+        self.tag = tag
+        self.rootkeys = args
+
+    def __get__(self, instance, cls):
+        instance.get()
+        result = []
+        rootnode = instance.root
+        for rootkey in self.rootkeys:
+            rootnode = rootnode.find(rootkey)
+        for node in rootnode.findall(self.tag):
+            result.append(self.klass(instance.lims, uri=node.attrib["uri"]))
+
+        if instance.root.find("next-page") is not None:
+            next_queue_page = instance.__class__(
+                instance.lims, uri=instance.root.find("next-page").attrib.get("uri")
+            )
+            result.extend(next_queue_page.artifacts)
+        return result
+    
+
 class DimensionDescriptor(TagDescriptor):
     """An instance attribute containing a dictionary specifying
     the properties of a dimension of a container type.
