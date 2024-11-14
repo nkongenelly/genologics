@@ -24,7 +24,7 @@ import re
 from io import BytesIO
 
 # python 2.7, 3+ compatibility
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlparse
 from xml.etree import ElementTree
 
 import requests
@@ -276,6 +276,10 @@ class Lims:
         """
         params = self._get_params(name=name, start_index=start_index)
         return self._get_instances(ReagentType, add_info=add_info, params=params)
+    
+    def get_containertypes (self, name=None):
+        params = self._get_params(name=name)
+        return self._get_instances(Containertype, params=params)
 
     def get_labs(
         self,

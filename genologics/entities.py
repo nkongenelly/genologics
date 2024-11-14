@@ -7,6 +7,7 @@ Copyright (C) 2012 Per Kraulis
 """
 
 import logging
+import copy
 from urllib.parse import parse_qs, urlparse, urlsplit, urlunparse
 from xml.etree import ElementTree
 
