@@ -10,7 +10,7 @@ In order to use the patched get :
     The expected format is { "$entity_uri_1" : "$entity_xml_1",
                              "$entity_uri_2" : "$entity_xml_2",
                               ...}
-2 - Set up a test case and use the Mock's library path function to patch "genologics.lims.Lims.get" with this module's "patched get"
+2 - Set up a test case and use the Mock's library path function to patch 'genologics.lims.Lims.get' with this module's 'patched get'
     This will replace http calls to your lims by the XML you prepared. You can find an example of this in tests/test_example.py.
 
 """
@@ -49,11 +49,11 @@ def dump_source_xml(lims):
     """After using a LIMS object, using this method on it will dump all the cached XML in a serialized dictionnary form,
     to be used with patched_get"""
     final_string = []
-    final_string.append('{')
+    final_string.append("{")
     for k, v in lims.cache.items():
         final_string.append("'{0}':".format(k))
         v.get()
-        final_string.append('"""{}""",'.format(v.xml().replace("\n", "\n")))
+        final_string.append('"""{}""", '.format(v.xml().replace("\n", "\n")))
     final_string.append("}")
 
     return "\n".join(final_string)

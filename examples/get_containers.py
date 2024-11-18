@@ -17,13 +17,13 @@ lims.check_version()
 
 # Get the list of all containers.
 ## containers = lims.get_containers()
-## print len(containers), 'containers in total'
+## print len(containers), "containers in total"
 
-## for state in ['Empty', 'Reagent-Only', 'Discarded', 'Populated']:
+## for state in ["Empty", "Reagent-Only", "Discarded", "Populated"]:
 ##     containers = lims.get_containers(state=state)
-##     print len(containers), state, 'containers'
+##     print len(containers), state, "containers"
 
-containers = lims.get_containers(type='96 well plate')
+containers = lims.get_containers(type="96 well plate")
 print(len(containers))
 
 container = containers[2]

@@ -29,7 +29,7 @@ def procHistory(proc, samplename):
         for o in artifacts:
             if o.id == starting_art:
                 if o.parent_process is None:
-                    # flow control : if there is no parent process, we can stop iterating, we're done.
+                    # flow control : if there is no parent process, we can stop iterating, we"re done.
                     not_done = False
                     break  # breaks the for artifacts, we are done anyway.
                 else:

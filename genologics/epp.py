@@ -222,7 +222,7 @@ class EppLogger:
 class ReadResultFiles:
     """Class to read pars different kinds of result files from a process.
     The class stores the parsed content of all shared result files in a
-    dictionary 'shared_files'. The data is parsed as lists of lists."""
+    dictionary "shared_files". The data is parsed as lists of lists."""
 
     def __init__(self, process):
         self.process = process
@@ -272,7 +272,7 @@ class ReadResultFiles:
             parsed_file     A list of lists where sublists are rows of the csv.
             name            Name of parsed file.
             first_header    First column of the heather section in the file.
-                            default value is 'None'
+                            default value is "None"
             root_key_col    If you want the root keys to be given by some other
                             column than the first one, set root_key_col to the
                             column number.

@@ -204,7 +204,7 @@ class UdfDictionary:
                 self._udt = elem.attrib["name"]
                 self._elems = elem.findall(nsmap("udf:field"))
         else:
-            tag = nsmap('udf:field')
+            tag = nsmap("udf:field")
             for elem in list(self.rootnode):
                 if elem.tag == tag:
                     self._elems.append(elem)
@@ -241,9 +241,9 @@ class UdfDictionary:
         self._lookup[key] = value
         key_found_in_xml = False
         for node in self._elems:
-            if node.attrib['name'] != key: continue
+            if node.attrib["name"] != key: continue
             key_found_in_xml = True
-            vtype = node.attrib['type'].lower()
+            vtype = node.attrib["type"].lower()
 
             if value is None:
                 value = ""
@@ -276,9 +276,9 @@ class UdfDictionary:
             else:
                 raise NotImplemented("UDF type '%s'" % vtype)
             if value is None:
-                value = ''
+                value = ""
             elif not isinstance(value, str):
-                value = str(value).encode('UTF-8')
+                value = str(value).encode("UTF-8")
             node.text = value
             break
 
@@ -554,7 +554,7 @@ class NestedEntityListDescriptor(EntityListDescriptor):
             # NOTE: The name should correspond to the name on the object, not necessarily the same
             # as the name of the attribute.
             extra = {extra_name: node.attrib[extra_name] for extra_name in self.extra_meta}
-            result.append(self.klass(instance.lims, uri=node.attrib['uri'], extra=extra))
+            result.append(self.klass(instance.lims, uri=node.attrib["uri"], extra=extra))
         return result
 
 
@@ -604,17 +604,17 @@ class ReagentLabelList(BaseDescriptor):
 
     def __set__(self, instance, values):
         instance.get()
-        nodes = instance.root.findall('reagent-label')
+        nodes = instance.root.findall("reagent-label")
         if not nodes:
             root = instance.root
             for value in values:
-                ElementTree.SubElement(root, 'reagent-label', name=value)
+                ElementTree.SubElement(root, "reagent-label", name=value)
 
         elif len(values) != len(nodes):
             raise ValueError("Mismatching number of reagent labels")
         else:
             for node, value in zip(nodes, values):
-                node.attrib['name'] = value
+                node.attrib["name"] = value
 
 
 class OutputReagentList(BaseDescriptor):

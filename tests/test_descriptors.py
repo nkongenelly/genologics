@@ -267,12 +267,12 @@ class TestUdfDictionary(TestCase):
         assert self._get_udf_value(self.dict1, "new bool") == "false"
 
     def test___setitem__unicode(self):
-        assert self._get_udf_value(self.dict1, 'test') == 'stuff'
-        self.dict1.__setitem__('test', 'unicode')
-        assert self._get_udf_value(self.dict1, 'test') == 'unicode'
+        assert self._get_udf_value(self.dict1, "test") == "stuff"
+        self.dict1.__setitem__("test", "unicode")
+        assert self._get_udf_value(self.dict1, "test") == "unicode"
 
-        self.dict1.__setitem__('test', 'unicode2')
-        assert self._get_udf_value(self.dict1, 'test') == 'unicode2'
+        self.dict1.__setitem__("test", "unicode2")
+        assert self._get_udf_value(self.dict1, "test") == "unicode2"
 
     def test___delitem__(self):
         pass

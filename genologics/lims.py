@@ -82,11 +82,11 @@ class Lims:
 
     def __init__(self, baseuri, username, password, version=VERSION):
         """baseuri: Base URI for the GenoLogics server, excluding
-                    the 'api' or version parts!
+                    the "api" or version parts!
                     For example: https://genologics.scilifelab.se:8443/
         username: The account name of the user to login as.
         password: The password for the user account to login as.
-        version: The optional LIMS API version, by default 'v2'
+        version: The optional LIMS API version, by default "v2"
         """
         self.baseuri = baseuri.rstrip("/") + "/"
         self.username = username
@@ -623,7 +623,7 @@ class Lims:
         result = dict()
         for key, value in list(kwargs.items()):
             if value is None: continue
-            result[key.replace('_', '-')] = value
+            result[key.replace("_", "-")] = value
         return result
 
     def _get_params_udf(self, udf=dict(), udtname=None, udt=dict()):
@@ -632,7 +632,7 @@ class Lims:
         for key, value in list(udf.items()):
             result["udf.%s" % key] = value
         if udtname is not None:
-            result['udt.name'] = udtname
+            result["udt.name"] = udtname
         for key, value in list(udt.items()):
             result["udt.%s" % key] = value
         return result
@@ -704,17 +704,17 @@ class Lims:
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in list(root):
-                uri = node.attrib['uri']
+                uri = node.attrib["uri"]
                 if uri in instance_map:
                     instance = instance_map[uri]
                 else:
-                    # We're getting a uri we didn't ask for. This should mean that we
+                    # We're getting a uri we didn"t ask for. This should mean that we
                     # asked for one without the state flag but are getting one with it
                     parsed = urlparse(uri)
                     uri_without_state_param = "{}://{}{}".format(
                             parsed.scheme, parsed.netloc, parsed.path)
                     instance = instance_map[uri_without_state_param]
-                    node.attrib['uri'] = uri_without_state_param
+                    node.attrib["uri"] = uri_without_state_param
                 instance.root = node
 
         return list(instance_map.values())

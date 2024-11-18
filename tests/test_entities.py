@@ -170,19 +170,19 @@ generic_sample_creation_xml = """
 
 def elements_equal(e1, e2):
     if e1.tag != e2.tag:
-        print(('Tag: %s != %s' % (e1.tag, e2.tag)))
+        print(("Tag: %s != %s" % (e1.tag, e2.tag)))
         return False
     if e1.text and e2.text and e1.text.strip() != e2.text.strip():
-        print(('Text: %s != %s' % (e1.text.strip(), e2.text.strip())))
+        print(("Text: %s != %s" % (e1.text.strip(), e2.text.strip())))
         return False
     if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip():
-        print(('Tail: %s != %s' % (e1.tail.strip(), e2.tail.strip())))
+        print(("Tail: %s != %s" % (e1.tail.strip(), e2.tail.strip())))
         return False
     if e1.attrib != e2.attrib:
-        print(('Attrib: %s != %s' % (e1.attrib, e2.attrib)))
+        print(("Attrib: %s != %s" % (e1.attrib, e2.attrib)))
         return False
     if len(e1) != len(e2):
-        print(('length %s (%s) != length (%s) ' % (e1.tag, len(e1), e2.tag, len(e2))))
+        print(("length %s (%s) != length (%s) " % (e1.tag, len(e1), e2.tag, len(e2))))
         return False
     return all(
         elements_equal(c1, c2)
@@ -193,7 +193,7 @@ def elements_equal(e1, e2):
 
 
 class TestEntities(TestCase):
-    dummy_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    dummy_xml = """<?xml version='1.0' encoding='utf-8' standalone="yes"?>
     <dummy></dummy>"""
 
     def setUp(self):
@@ -499,7 +499,7 @@ class TestSample(TestEntities):
                 position="1:1",
                 name="s1",
             )
-            data = """<?xml version=\'1.0\' encoding=\'utf-8\'?>
+            data = """<?xml version=\"1.0\" encoding=\"utf-8\"?>
             <smp:samplecreation xmlns:smp="http://genologics.com/ri/sample">
             <name>s1</name>
             <project uri="project" limsid="project" />
