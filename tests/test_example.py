@@ -25,8 +25,8 @@ class TestExample(TestCase):
 
     def test_project_example(self):
         with patch("genologics.lims.Lims.get", side_effect=test_utils.patched_get):
-            pj = Project(self.lims, id='BLA1')
-            self.assertEqual(pj.name, 'Test')
+            pj = Project(self.lims, id="BLA1")
+            self.assertEqual(pj.name, "Test")
 
 
 if __name__ == "__main__":

@@ -23,18 +23,11 @@ import os
 import re
 from io import BytesIO
 import requests
-from urllib.parse import urlparse
 
 # python 2.7, 3+ compatibility
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlparse
 from xml.etree import ElementTree
 
-if version_info[0] == 2:
-    from urllib.parse import urljoin
-    from urllib.parse import urlencode
-else:
-    from urllib.parse import urljoin
-    from urllib.parse import urlencode
 
 from genologics.constants import nsmap
 
@@ -59,19 +52,6 @@ from .entities import (
     Workflow,
 )
 
-# Python 2.6 support work-arounds
-# - Exception ElementTree.ParseError does not exist
-# - ElementTree.ElementTree.write does not take arg. xml_declaration
-if version_info[:2] < (2,7):
-    from xml.parsers import expat
-    ElementTree.ParseError = expat.ExpatError
-    p26_write = ElementTree.ElementTree.write
-    def write_with_xml_declaration(self, file, encoding, xml_declaration):
-        assert xml_declaration is True # Support our use case only
-        file.write("<?xml version='1.0' encoding='utf-8'?>\n")
-        p26_write(self, file, encoding=encoding)
-    ElementTree.ElementTree.write = write_with_xml_declaration
-
 TIMEOUT = 16
 
 
@@ -82,11 +62,11 @@ class Lims:
 
     def __init__(self, baseuri, username, password, version=VERSION):
         """baseuri: Base URI for the GenoLogics server, excluding
-                    the 'api' or version parts!
+                    the "api" or version parts!
                     For example: https://genologics.scilifelab.se:8443/
         username: The account name of the user to login as.
         password: The password for the user account to login as.
-        version: The optional LIMS API version, by default 'v2'
+        version: The optional LIMS API version, by default "v2"
         """
         self.baseuri = baseuri.rstrip("/") + "/"
         self.username = username
@@ -623,7 +603,7 @@ class Lims:
         result = dict()
         for key, value in list(kwargs.items()):
             if value is None: continue
-            result[key.replace('_', '-')] = value
+            result[key.replace("_", "-")] = value
         return result
 
     def _get_params_udf(self, udf=dict(), udtname=None, udt=dict()):
@@ -632,7 +612,7 @@ class Lims:
         for key, value in list(udf.items()):
             result["udf.%s" % key] = value
         if udtname is not None:
-            result['udt.name'] = udtname
+            result["udt.name"] = udtname
         for key, value in list(udt.items()):
             result["udt.%s" % key] = value
         return result
@@ -682,15 +662,12 @@ class Lims:
             return []
 
         ALLOWED_TAGS = ("artifact", "container", "file", "sample")
-        if instances[0]._TAG not in ALLOWED_TAGS:
-            raise TypeError(
-                f"Cannot retrieve batch for instances of type '{instances[0]._TAG}'"
-            )
-
         root = ElementTree.Element(nsmap("ri:links"))
         needs_request = False
         instance_map = {}
         for instance in instances:
+            if instance._TAG not in ALLOWED_TAGS:
+                raise TypeError( f"Cannot retrieve batch for instances of type '{instances[0]._TAG}'") 
             instance_map[instance.uri] = instance
 
             if force or instance.root is None:
@@ -704,17 +681,16 @@ class Lims:
             data = self.tostring(ElementTree.ElementTree(root))
             root = self.post(uri, data)
             for node in list(root):
-                uri = node.attrib['uri']
+                uri = node.attrib["uri"]
                 if uri in instance_map:
                     instance = instance_map[uri]
                 else:
-                    # We're getting a uri we didn't ask for. This should mean that we
+                    # We're getting a uri we didn"t ask for. This should mean that we
                     # asked for one without the state flag but are getting one with it
                     parsed = urlparse(uri)
-                    uri_without_state_param = "{}://{}{}".format(
-                            parsed.scheme, parsed.netloc, parsed.path)
+                    uri_without_state_param = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
                     instance = instance_map[uri_without_state_param]
-                    node.attrib['uri'] = uri_without_state_param
+                    node.attrib["uri"] = uri_without_state_param
                 instance.root = node
 
         return list(instance_map.values())

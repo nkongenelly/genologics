@@ -19,10 +19,10 @@ lims.check_version()
 
 project = Project(lims, id="P193")
 
-print('UDFs:')
+print("UDFs:")
 pprint(list(project.udf.items()))
 
-print('files:')
+print("files:")
 for file in project.files:
     print(file.content_location)
 
