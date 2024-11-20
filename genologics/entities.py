@@ -72,9 +72,9 @@ class SampleHistory:
         for key, dict in self.history.items():
             logger.info(key)
             for key2, dict2 in list(dict.items()):
-                logger.info("\t{}".format(key2))
+                logger.info(f"\t{key2}")
                 for key, value in list(dict2.items()):
-                    logger.info("\t\t{0}->{1}".format(key, (value if value is not None else "None")))
+                    logger.info(f"\t\t{key}->{(value if value is not None else "None")}")
         logger.info("\nHistory List")
         for art in self.history_list:
             logger.info(art)
