@@ -42,7 +42,7 @@ _NSMAP = dict(
 )
 
 for prefix, uri in list(_NSMAP.items()):
-    ElementTree._namespace_map[uri] = prefix
+    ElementTree.register_namespace(prefix, uri)
 
 _NSPATTERN = re.compile(r'(\{)(.+?)(\})')
 

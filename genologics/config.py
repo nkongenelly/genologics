@@ -1,6 +1,4 @@
 import os
-import sys
-import warnings
 from configparser import ConfigParser
 
 

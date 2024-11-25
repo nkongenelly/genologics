@@ -7,8 +7,6 @@ Copyright (C) 2012 Per Kraulis
 """
 
 from genologics.constants import nsmap
-from urllib.parse import urlsplit, urlparse, parse_qs, urlunparse
-
 
 from decimal import Decimal
 import datetime
@@ -71,11 +69,14 @@ class StringAttributeDescriptor(TagDescriptor):
     """
 
     def __get__(self, instance, cls):
-        # Skip loading the instance if we have information in the extra dictionary. This
-        # allows faster loading when the data is available in an overview page. An example is
-        # that names of Stages and Protocols is available in the details page for Workflows.
+        """
+        Skip loading the instance if we have information in the extra dictionary. This
+        allows faster loading when the data is available in an overview page. An example is
+        that names of Stages and Protocols is available in the details page for Workflows.
 
-        # If we have loaded the details for this entity (instance.root is not None), we always use that.
+        If we have loaded the details for this entity (instance.root is not None), we always use that.
+        """
+
         if instance.extra is not None and instance.root is None and self.tag in instance.extra:
             return instance.extra[self.tag]
         instance.get()
@@ -153,10 +154,7 @@ class UdfDictionary(object):
     "Dictionary-like container of UDFs, optionally within a UDT."
 
     def _is_string(self, value):
-        try:
-            return isinstance(value, str)
-        except:
-            return isinstance(value, str)
+        return isinstance(value, str)
 
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
@@ -243,10 +241,7 @@ class UdfDictionary(object):
 
             if value is None:
                 value=''
-            elif vtype == 'string':
-                if not self._is_string(value):
-                    raise TypeError('String UDF requires str or unicode value')
-            elif vtype == 'str':
+            elif vtype in ['string', 'str']:
                 if not self._is_string(value):
                     raise TypeError('String UDF requires str or unicode value')
             elif vtype == 'text':
